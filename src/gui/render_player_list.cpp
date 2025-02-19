@@ -1,6 +1,8 @@
 #include "render_player_list.hpp"
+#include "render_disconnect.hpp"
 #include "render_view_player.hpp"
 #include "styles.hpp"
+#include "utils.hpp"
 
 #include "../config.hpp"
 #include "../player_list.hpp"
@@ -18,56 +20,6 @@ static const auto vip_steam_id = CSteamID{108371544u, k_EUniversePublic, k_EAcco
 static shared_ptr<gg::renderer::texture_st> container_background_texture;
 static shared_ptr<gg::renderer::texture_st> entry_background_texture;
 static shared_ptr<gg::renderer::texture_st> menu_fe_namebase;
-
-/**
- * Draw a 9-slice scaled texture to the ImGui background drawlist
- *
- * Applies global scaling factor to texture size and padding, but not to the target rect
- *
- * https://en.wikipedia.org/wiki/9-slice_scaling
- */
-static void render_nine_slice(ImDrawList *drawlist, ImTextureID texture_id, ImVec2 texture_size,
-                              ImVec2 pos, ImVec2 size, ImVec2 padding, float opacity = 1.f)
-{
-    texture_size *= gg::gui::scale;
-    padding *= gg::gui::scale;
-
-    auto color = ImGui::GetColorU32({1.f, 1.f, 1.f, opacity});
-
-    auto verts = array{pos, pos + padding, pos + size - padding, pos + size};
-
-    auto uvs = array{ImVec2{0, 0}, padding / texture_size, ImVec2{1, 1} - padding / texture_size,
-                     ImVec2{1, 1}};
-
-    // If the size is too small to fit the padding, shrink the top/bottom or left/right rects to
-    // half of the size
-    if (verts[1].x > verts[2].x)
-    {
-        verts[1].x = verts[2].x = pos.x + size.x / 2.f;
-        uvs[1].x = size.x / 2.f / texture_size.x;
-        uvs[2].x = 1.f - uvs[1].x;
-    }
-
-    if (verts[1].y > verts[2].y)
-    {
-        verts[1].y = verts[2].y = pos.y + size.y / 2.f;
-        uvs[1].y = size.y / 2.f / texture_size.y;
-        uvs[2].y = 1.f - uvs[1].y;
-    }
-
-    for (int i = 0; i < 3; i++)
-    {
-        for (int j = 0; j < 3; j++)
-        {
-            if (verts[i].x == verts[i + 1].x || verts[j].y == verts[j + 1].y)
-                continue;
-
-            drawlist->AddImage(texture_id, {verts[i].x, verts[j].y},
-                               {verts[i + 1].x, verts[j + 1].y}, {uvs[i].x, uvs[j].y},
-                               {uvs[i + 1].x, uvs[j + 1].y}, color);
-        }
-    }
-}
 
 /**
  * Draw saved information about a player in the game session to an ImGui table row
@@ -183,11 +135,13 @@ void gg::gui::initialize_player_list()
         renderer::load_texture_from_file(gg::config::mod_folder / "assets/MENU_FE_NameBase.png");
 
     initialize_view_player();
+    initialize_disconnect();
 }
 
 void gg::gui::render_player_list()
 {
     static bool is_block_player_open = false;
+    static bool is_disconnect_open = false;
 
     // Alpha of the overlay, so we can do a cool fade-in animation when it appears
     static float alpha = 0.f;
@@ -202,6 +156,7 @@ void gg::gui::render_player_list()
     {
         alpha = 0.f;
         is_block_player_open = false;
+        is_disconnect_open = false;
         return;
     }
 
@@ -283,7 +238,7 @@ void gg::gui::render_player_list()
         {
             render_nine_slice(ImGui::GetBackgroundDrawList(), menu_fe_namebase->desc.second.ptr,
                               {(float)menu_fe_namebase->width, (float)menu_fe_namebase->height},
-                              pos, size, {36.f, 0.f});
+                              pos, size, {36.f, 0.f}, .8f);
 
             pos.y += player_list_row_height * scale;
         }
@@ -314,6 +269,7 @@ void gg::gui::render_player_list()
     }
 
     render_view_player(is_block_player_open, windowpos, player_count);
+    render_disconnect(is_disconnect_open, windowpos, windowsize);
 
     ImGui::PopStyleVar(ImGuiStyleVar_WindowBorderSize);
     ImGui::PopStyleVar(ImGuiStyleVar_WindowPadding);

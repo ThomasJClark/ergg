@@ -2,6 +2,7 @@
 
 #include "render_view_player.hpp"
 #include "styles.hpp"
+#include "utils.hpp"
 
 #include "../config.hpp"
 #include "../player_list.hpp"
@@ -13,7 +14,6 @@
 
 #include <windows.h>
 
-#include <algorithm>
 #include <array>
 #include <memory>
 
@@ -26,8 +26,6 @@ static const auto number_key_files =
 static auto number_key_textures =
     array<shared_ptr<gg::renderer::texture_st>, number_key_files.size()>{};
 
-static constexpr float fade_time = 0.1f;
-
 void gg::gui::initialize_view_player()
 {
     ranges::transform(number_key_files, number_key_textures.begin(), [](auto file) {
@@ -37,7 +35,6 @@ void gg::gui::initialize_view_player()
 
 void gg::gui::render_view_player(bool &is_open, const ImVec2 &window_pos, int player_count)
 {
-    static float alpha = 0.f;
     static int last_player_count = 0;
 
     int effective_player_count = player_count;
@@ -88,17 +85,15 @@ void gg::gui::render_view_player(bool &is_open, const ImVec2 &window_pos, int pl
     if (player_count != last_player_count)
     {
         is_open = false;
-        alpha = 0.f;
         last_player_count = player_count;
     }
 
     // When in view mode, show a keycode symbol next to each player and view that player if the
     // key is pressed
-    alpha += ImGui::GetIO().DeltaTime / fade_time * (is_open ? 1.f : -1.f);
-    alpha = clamp(alpha, 0.f, 1.f);
-    if (alpha > 0.f)
+    static fade_in_out_st fade_in_out;
+    if (fade_in_out.animate(is_open))
     {
-        auto color = ImGui::ColorConvertFloat4ToU32({1.f, 1.f, 1.f, alpha});
+        auto color = ImGui::ColorConvertFloat4ToU32({1.f, 1.f, 1.f, fade_in_out.alpha});
         auto size = gg::gui::player_list_avatar_size;
         auto pos = window_pos;
         pos.x -= size.x + 8.f;
