@@ -21,7 +21,7 @@ extern bool show_yourself;
 
 extern int toggle_logs_key;
 extern int toggle_player_list_key;
-extern int view_player_key;
+extern int block_player_key;
 extern int disconnect_key;
 
 extern bool debug;

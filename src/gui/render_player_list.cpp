@@ -1,6 +1,8 @@
-#include "render_player_list.hpp"
+#include <steam/steamclientpublic.h>
+
+#include "render_block_player.hpp"
 #include "render_disconnect.hpp"
-#include "render_view_player.hpp"
+#include "render_player_list.hpp"
 #include "styles.hpp"
 #include "utils.hpp"
 
@@ -43,7 +45,7 @@ static void render_player_list_entry(const gg::player_list_entry_st &entry, int 
         color = gg::gui::red;
     }
     else if (entry.player && entry.player->session_holder.network_session &&
-             CSteamID{entry.player->session_holder.network_session->steam_id} == vip_steam_id)
+             entry.player->session_holder.network_session->steam_id == vip_steam_id)
     {
         color = gg::gui::blue;
     }
@@ -64,7 +66,8 @@ static void render_player_list_entry(const gg::player_list_entry_st &entry, int 
                     ImGui::GetCursorScreenPos() - ImVec2{.5f, .5f} * gg::gui::scale,
                     ImGui::GetCursorScreenPos() +
                         (gg::gui::player_list_avatar_size + ImVec2{.5f, .5f}) * gg::gui::scale,
-                    ImGui::GetColorU32(color), gg::gui::scale, ImDrawFlags_None, gg::gui::scale);
+                    ImGui::GetColorU32(color), gg::gui::scale, ImDrawFlags_None,
+                    2.f * gg::gui::scale);
             }
 
             ImGui::Image(entry.steam_avatar->desc.second.ptr,
@@ -134,7 +137,7 @@ void gg::gui::initialize_player_list()
     menu_fe_namebase =
         renderer::load_texture_from_file(gg::config::mod_folder / "assets/MENU_FE_NameBase.png");
 
-    initialize_view_player();
+    initialize_block_player();
     initialize_disconnect();
 }
 
@@ -268,7 +271,7 @@ void gg::gui::render_player_list()
         }
     }
 
-    render_view_player(is_block_player_open, windowpos, player_count);
+    render_block_player(is_block_player_open, windowpos, player_count);
     render_disconnect(is_disconnect_open, windowpos, windowsize);
 
     ImGui::PopStyleVar(ImGuiStyleVar_WindowBorderSize);

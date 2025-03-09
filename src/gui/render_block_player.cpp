@@ -1,16 +1,17 @@
 #define WIN32_LEAN_AND_MEAN
 
-#include "render_view_player.hpp"
+#include <steam/steamclientpublic.h>
+
+#include "render_block_player.hpp"
 #include "styles.hpp"
 #include "utils.hpp"
 
 #include "../config.hpp"
+#include "../fake_block.hpp"
 #include "../player_list.hpp"
 #include "../renderer/texture.hpp"
 
 #include <imgui.h>
-
-#include <steam/isteamfriends.h>
 
 #include <windows.h>
 
@@ -26,14 +27,16 @@ static const auto number_key_files =
 static auto number_key_textures =
     array<shared_ptr<gg::renderer::texture_st>, number_key_files.size()>{};
 
-void gg::gui::initialize_view_player()
+void gg::gui::initialize_block_player()
 {
     ranges::transform(number_key_files, number_key_textures.begin(), [](auto file) {
         return renderer::load_texture_from_file(gg::config::mod_folder / "assets" / file);
     });
+
+    initialize_fake_block();
 }
 
-void gg::gui::render_view_player(bool &is_open, const ImVec2 &window_pos, int player_count)
+void gg::gui::render_block_player(bool &is_open, const ImVec2 &window_pos, int player_count)
 {
     static int last_player_count = 0;
 
@@ -44,7 +47,7 @@ void gg::gui::render_view_player(bool &is_open, const ImVec2 &window_pos, int pl
     }
 
     // Enter block mode when the configured key is pressed
-    if (GetAsyncKeyState(gg::config::view_player_key) & 1)
+    if (GetAsyncKeyState(gg::config::block_player_key) & 1)
     {
         is_open = !is_open;
     }
@@ -64,9 +67,7 @@ void gg::gui::render_view_player(bool &is_open, const ImVec2 &window_pos, int pl
             {
                 if (entry->player && entry->player->session_holder.network_session)
                 {
-                    SteamFriends()->ActivateGameOverlayToUser(
-                        "steamid",
-                        CSteamID{entry->player->session_holder.network_session->steam_id});
+                    block_player(entry->player->session_holder.network_session->steam_id);
                 }
                 is_open = false;
                 break;
@@ -80,15 +81,15 @@ void gg::gui::render_view_player(bool &is_open, const ImVec2 &window_pos, int pl
         }
     }
 
-    // When a player joins or leaves the session, automatically hide the view UI so the player
-    // doesn't accidentally view the wrong person
+    // When a player joins or leaves the session, automatically hide the block UI so the player
+    // doesn't accidentally block the wrong person
     if (player_count != last_player_count)
     {
         is_open = false;
         last_player_count = player_count;
     }
 
-    // When in view mode, show a keycode symbol next to each player and view that player if the
+    // When in block mode, show a keycode symbol next to each player and block that player if the
     // key is pressed
     static fade_in_out_st fade_in_out;
     if (fade_in_out.animate(is_open))

@@ -4,11 +4,6 @@
 
 #include "../config.hpp"
 
-#include <elden-x/utils/modutils.hpp>
-#include <steam/isteamfriends.h>
-#include <steam/steam_api_flat.h>
-#include <steam/steamclientpublic.h>
-
 #include <spdlog/spdlog.h>
 
 #include <backends/imgui_impl_dx12.h>
@@ -57,44 +52,6 @@ static void load_font(fs::path filename)
     io.Fonts->Build();
 }
 
-struct steam_friends_map_st
-{
-    // clang-format off
-    virtual void unk0() {}
-    virtual void unk1() {}
-    virtual void unk2() {}
-    virtual void unk3() {}
-    virtual void unk4() {}
-    virtual void unk5() {}
-    virtual void unk6() {}
-    virtual void unk7() {}
-    virtual void unk8() {}
-    virtual void unk9() {}
-    virtual void unk10() {}
-    virtual void unk11() {}
-    virtual void unk12() {}
-    // clang-format on
-    virtual EFriendRelationship get_relationship(CSteamID)
-    {
-        return k_EFriendRelationshipNone;
-    }
-};
-
-struct steam_friends_impl_st : public ISteamFriends
-{
-    steam_friends_map_st *friends_map;
-};
-
-static EFriendRelationship (*GetFriendRelationship)(ISteamFriends *, CSteamID);
-static EFriendRelationship GetFriendRelationship_hook(ISteamFriends *_this, CSteamID steam_id)
-{
-    auto res = static_cast<steam_friends_impl_st *>(_this)->friends_map->get_relationship(steam_id);
-
-    SPDLOG_INFO("GetFriendRelationship {} -> {}", steam_id.ConvertToUint64(), (int)res);
-
-    return k_EFriendRelationshipNone;
-}
-
 void gg::gui::initialize_overlay()
 {
     ImGui::GetStyle().WindowBorderSize = 0;
@@ -102,23 +59,6 @@ void gg::gui::initialize_overlay()
     load_font(gg::config::mod_folder / "assets" / "FOT-Matisse ProN DB.ttf");
 
     initialize_player_list();
-
-    auto vftable = *(void ***)SteamFriends();
-
-    // vftable[5] = &get_friend_relationship_hook;
-
-    // GetFriendRelationship = (EFriendRelationship(*)(ISteamFriends *, CSteamID))vftable[5];
-
-    // modutils::hook({.address = vftable[7]}, GetFriendPersonaName_hook, GetFriendPersonaName);
-    // modutils::enable_hooks();
-
-    // SPDLOG_INFO("steam friends = {}", (void *)SteamFriends());
-
-    SPDLOG_INFO("SteamFriends() = {}", (void *)SteamFriends());
-    SPDLOG_INFO("vftable[5] = {}", vftable[5]);
-
-    modutils::hook({.address = vftable[5]}, GetFriendRelationship_hook, GetFriendRelationship);
-    modutils::enable_hooks();
 }
 
 void gg::gui::render_overlay()

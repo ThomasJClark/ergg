@@ -23,7 +23,7 @@ bool gg::config::show_yourself = false;
 
 int gg::config::toggle_logs_key = VK_OEM_3;
 int gg::config::toggle_player_list_key = VK_F2;
-int gg::config::view_player_key = VK_F3;
+int gg::config::block_player_key = VK_F3;
 int gg::config::disconnect_key = VK_F4;
 
 bool gg::config::debug = false;
@@ -106,8 +106,8 @@ void gg::config::load_config(const fs::path &ini_path)
 
     auto &actions = ini["actions"];
     try_parse_keycode(actions, "toggle_logs", toggle_logs_key);
-    try_parse_keycode(actions, "toggle_overlay", toggle_player_list_key);
-    try_parse_keycode(actions, "block", view_player_key);
+    try_parse_keycode(actions, "toggle_player_list", toggle_player_list_key);
+    try_parse_keycode(actions, "block_player", block_player_key);
     try_parse_keycode(actions, "disconnect", disconnect_key);
 
     auto &misc = ini["misc"];
@@ -125,9 +125,9 @@ void gg::config::load_config(const fs::path &ini_path)
     SPDLOG_INFO("high_ping = {}", high_ping);
     SPDLOG_INFO("show_yourself = {}", show_yourself);
 
-    SPDLOG_INFO("toggle_player_list_key = 0x{:x}", toggle_player_list_key);
-    SPDLOG_INFO("disconnect_key = 0x{:x}", disconnect_key);
-    SPDLOG_INFO("view_player_key = 0x{:x}", view_player_key);
+    SPDLOG_INFO("toggle_player_list = 0x{:x}", toggle_player_list_key);
+    SPDLOG_INFO("block_player = 0x{:x}", block_player_key);
+    SPDLOG_INFO("disconnect = 0x{:x}", disconnect_key);
 
     SPDLOG_INFO("debug = {}", debug);
 }

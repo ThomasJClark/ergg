@@ -2,12 +2,14 @@
 
 #include "config.hpp"
 
-#include <elden-x/chr/world_chr_man.hpp>
-#include <elden-x/now_loading_helper.hpp>
 #include <steam/isteamfriends.h>
 #include <steam/isteamnetworkingmessages.h>
 #include <steam/isteamuser.h>
 #include <steam/isteamutils.h>
+#include <steam/steamclientpublic.h>
+
+#include <elden-x/chr/world_chr_man.hpp>
+#include <elden-x/now_loading_helper.hpp>
 
 #include <codecvt>
 
@@ -100,7 +102,7 @@ void gg::update_player_list()
         if (player && player->session_holder.network_session &&
             (gg::config::show_yourself || player != world_chr_man->main_player))
         {
-            auto steam_id = CSteamID{player->session_holder.network_session->steam_id};
+            auto steam_id = player->session_holder.network_session->steam_id;
 
             // If this slot was previously empty or had a different player, construct a new
             // entry for this player

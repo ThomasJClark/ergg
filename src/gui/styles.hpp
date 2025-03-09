@@ -13,9 +13,9 @@ static constexpr float virtual_height = 1080.f;
 static constexpr auto white = ImVec4{.797f, .797f, .797f, 1.f};
 static constexpr auto pale_gold = ImVec4{.765f, .71f, .6f, 1.f};
 static constexpr auto red = ImVec4{.784f, .161f, .184f, 1.f};
-static constexpr auto green = ImVec4{0, 1, 0, 1};
-static constexpr auto blue = ImVec4{.118, .565, 1, 1};
-static constexpr auto gold = ImVec4{1, .843, 0, 1};
+static constexpr auto green = ImVec4{.565f, .729f, .235f, 1};
+static constexpr auto blue = ImVec4{.118f, .565f, 1, 1};
+static constexpr auto gold = ImVec4{1, .843f, 0, 1};
 
 static constexpr float font_size = 17;
 
@@ -26,3 +26,4 @@ extern float scale;
 
 }
 }
+// 90ba3c
