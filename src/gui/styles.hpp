@@ -7,8 +7,7 @@ namespace gg
 namespace gui
 {
 
-static constexpr float virtual_width = 1920.f;
-static constexpr float virtual_height = 1080.f;
+static constexpr auto virtual_size = ImVec2{1920.f, 1080.f};
 
 static constexpr auto white = ImVec4{.797f, .797f, .797f, 1.f};
 static constexpr auto pale_gold = ImVec4{.765f, .71f, .6f, 1.f};

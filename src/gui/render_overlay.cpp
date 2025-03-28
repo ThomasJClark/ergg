@@ -1,8 +1,11 @@
 #include "render_overlay.hpp"
+#include "render_logs.hpp"
 #include "render_player_list.hpp"
 #include "styles.hpp"
 
 #include "../config.hpp"
+
+#include <elden-x/chr/world_chr_man.hpp>
 
 #include <spdlog/spdlog.h>
 
@@ -58,26 +61,49 @@ void gg::gui::initialize_overlay()
 
     load_font(gg::config::mod_folder / "assets" / "FOT-Matisse ProN DB.ttf");
 
-    initialize_player_list();
+    gg::gui::initialize_player_list();
+    gg::gui::initialize_logs();
 }
 
 void gg::gui::render_overlay()
 {
-    static bool show_player_list = true;
+    auto &io = ImGui::GetIO();
+    auto viewport = ImGui::GetMainViewport();
+
+    gg::gui::scale = fminf(io.DisplaySize.y / virtual_size.y, io.DisplaySize.x / virtual_size.x);
+    io.FontGlobalScale = gg::gui::scale;
+
+    auto overlay_pos = viewport->WorkPos + ImVec2{viewport->WorkSize.x, 0.f} -
+                       (viewport->WorkSize - virtual_size * scale) / 2.f;
+
+    static bool is_player_list_open = true;
+    static bool is_logs_open = false;
 
     if (GetAsyncKeyState(gg::config::toggle_player_list_key) & 1)
     {
-        show_player_list = !show_player_list;
+        is_player_list_open = !is_player_list_open;
+        if (is_player_list_open)
+        {
+            is_logs_open = false;
+        }
     }
 
-    if (show_player_list)
+    if (GetAsyncKeyState(gg::config::toggle_logs_key) & 1)
     {
-        auto &io = ImGui::GetIO();
+        auto world_chr_man = er::CS::WorldChrManImp::instance();
+        if (world_chr_man && world_chr_man->main_player)
+        {
+            auto &chr_asm = world_chr_man->main_player->game_data->equip_game_data.chr_asm;
+            SPDLOG_INFO("chr_asm = {}", (void *)&chr_asm);
+        }
 
-        gg::gui::scale = fminf(io.DisplaySize.y / virtual_height, io.DisplaySize.x / virtual_width);
-
-        io.FontGlobalScale = gg::gui::scale;
-
-        render_player_list();
+        is_logs_open = !is_logs_open;
+        if (is_logs_open)
+        {
+            is_player_list_open = false;
+        }
     }
+
+    gg::gui::render_player_list(overlay_pos, is_player_list_open);
+    gg::gui::render_logs(overlay_pos, is_logs_open);
 }

@@ -141,13 +141,11 @@ void gg::gui::initialize_player_list()
     initialize_disconnect();
 }
 
-void gg::gui::render_player_list()
+void gg::gui::render_player_list(ImVec2 pos, bool is_open)
 {
+    static fade_in_out_st fade_in_out;
     static bool is_block_player_open = false;
     static bool is_disconnect_open = false;
-
-    // Alpha of the overlay, so we can do a cool fade-in animation when it appears
-    static float alpha = 0.f;
 
     update_player_list();
 
@@ -155,38 +153,19 @@ void gg::gui::render_player_list()
         ranges::count_if(player_list_entries, [](auto entry) { return entry.has_value(); });
 
     // Skip rendering the overlay if there are no entries, so we don't ever show a blank rectangle
-    if (player_count == 0)
+    if (!fade_in_out.animate(player_count > 0 && is_open))
     {
-        alpha = 0.f;
         is_block_player_open = false;
         is_disconnect_open = false;
         return;
     }
 
-    if (alpha < 1.f)
-    {
-        const float fade_in_time = 0.5f;
-        alpha = fminf(alpha + ImGui::GetIO().DeltaTime / fade_in_time, 1.f);
-    }
-
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0, 0});
     ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2{4, 0} * scale);
-    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, alpha);
+    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, fade_in_out.alpha);
 
-    auto viewport = ImGui::GetMainViewport();
-
-    auto next_window_pos = viewport->WorkPos + ImVec2{viewport->WorkSize.x, 0.f};
-
-    // Offset to take into account aspects other than 16:9
-    next_window_pos.x -= (viewport->WorkSize.x - virtual_width * scale) / 2.f;
-    next_window_pos.y -= (viewport->WorkSize.y - virtual_height * scale) / 2.f;
-
-    // Margin from edge of screen
-    next_window_pos += ImVec2{-56, 35} * scale;
-
-    ImGui::SetNextWindowPos(next_window_pos, ImGuiCond_Always, {1, 0});
-
+    ImGui::SetNextWindowPos(pos + ImVec2{-56, 35} * scale, ImGuiCond_Always, {1, 0});
     ImGui::SetNextWindowBgAlpha(0);
     ImGui::Begin("player_list", nullptr,
                  ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize |

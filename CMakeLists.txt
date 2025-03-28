@@ -52,9 +52,9 @@ FetchContent_Declare(steamworks-sdk
   CONFIGURE_COMMAND     ""
   BUILD_COMMAND         "")
 
-FetchContent_Declare(elden-x SOURCE_DIR
+FetchContent_Declare(elden-x
   GIT_REPOSITORY        https://github.com/ThomasJClark/elden-x.git
-  GIT_TAG               19196bf569e4f655304ca078bcd3c91a6b2443ce)
+  GIT_TAG               06e664334f3aa9f96266963e0f8c73dd3752db2f)
 
 add_definitions(-D_ITERATOR_DEBUG_LEVEL=0)
 
@@ -105,6 +105,7 @@ add_library(${PROJECT_NAME} SHARED
   src/renderer/texture.cpp
   src/gui/render_disconnect.cpp
   src/gui/render_block_player.cpp
+  src/gui/render_logs.cpp
   src/gui/render_player_list.cpp
   src/gui/render_overlay.cpp
   src/gui/utils.cpp)
