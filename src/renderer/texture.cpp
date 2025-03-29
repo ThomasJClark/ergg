@@ -2,6 +2,8 @@
 #include "renderer.hpp"
 #include "utils.hpp"
 
+#include "../config.hpp"
+
 #include <spdlog/spdlog.h>
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -211,4 +213,11 @@ shared_ptr<gg::renderer::texture_st> gg::renderer::load_texture_from_file(fs::pa
     }
 
     return load_texture_from_memory(data);
+}
+
+shared_ptr<gg::renderer::texture_st> gg::renderer::load_texture_from_resource(string name,
+                                                                              string type)
+{
+    auto texture_data = config::get_resource(name, type);
+    return texture_data.has_value() ? load_texture_from_memory(texture_data.value()) : nullptr;
 }

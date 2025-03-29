@@ -1,6 +1,11 @@
 #pragma once
 
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+
 #include <filesystem>
+#include <span>
+#include <string>
 
 namespace gg
 {
@@ -26,7 +31,10 @@ extern int disconnect_key;
 
 extern bool debug;
 
-void load_config(const std::filesystem::path &);
+void set_handle(HINSTANCE mod_handle);
+void load();
+
+std::optional<std::span<unsigned char>> get_resource(std::string name, std::string type = "DATA");
 
 }
 }

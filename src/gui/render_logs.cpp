@@ -2,7 +2,6 @@
 #include "styles.hpp"
 #include "utils.hpp"
 
-#include "../config.hpp"
 #include "../renderer/texture.hpp"
 
 #include <imgui.h>
@@ -13,8 +12,7 @@ static shared_ptr<gg::renderer::texture_st> background_texture;
 
 void gg::gui::initialize_logs()
 {
-    background_texture =
-        renderer::load_texture_from_file(gg::config::mod_folder / "assets/MENU_FL_d0.png");
+    background_texture = renderer::load_texture_from_resource("MENU_FL_d0");
 }
 
 void gg::gui::render_logs(ImVec2 pos, bool is_open)

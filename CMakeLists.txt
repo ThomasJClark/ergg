@@ -110,6 +110,8 @@ add_library(${PROJECT_NAME} SHARED
   src/gui/render_overlay.cpp
   src/gui/utils.cpp)
 
+target_sources(${PROJECT_NAME} PRIVATE resources/resources.rc)
+
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
 
 add_definitions(-DPROJECT_VERSION="${CMAKE_PROJECT_VERSION}")
@@ -118,10 +120,6 @@ add_definitions(-DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_DEBUG)
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy -t $<TARGET_FILE_DIR:${PROJECT_NAME}> ${CMAKE_SOURCE_DIR}/ergg.ini
-  COMMAND_EXPAND_LISTS)
-
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_SOURCE_DIR}/assets $<TARGET_FILE_DIR:${PROJECT_NAME}>/assets
   COMMAND_EXPAND_LISTS)
   
 target_link_libraries(${PROJECT_NAME} PRIVATE

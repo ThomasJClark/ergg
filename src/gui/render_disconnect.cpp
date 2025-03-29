@@ -23,8 +23,7 @@ shared_ptr<gg::renderer::texture_st> background_texture;
 
 void gg::gui::initialize_disconnect()
 {
-    background_texture =
-        gg::renderer::load_texture_from_file(gg::config::mod_folder / "assets/MENU_FE_Warning.png");
+    background_texture = gg::renderer::load_texture_from_resource("MENU_FE_Warning");
 }
 
 void gg::gui::render_disconnect(bool &is_open, const ImVec2 &windowpos, const ImVec2 &windowsize)

@@ -9,6 +9,7 @@
 #include <filesystem>
 #include <memory>
 #include <span>
+#include <string>
 #include <utility>
 
 #include <spdlog/spdlog.h>
@@ -59,6 +60,12 @@ std::shared_ptr<texture_st> load_texture_from_memory(std::span<unsigned char> da
  * Simple helper function to load a DX12 texture from an image file on disk
  */
 std::shared_ptr<texture_st> load_texture_from_file(std::filesystem::path filename);
+
+/**
+ * Simple helper function to load a DX12 texture from an embedded Windows resource in the current
+ * module
+ */
+std::shared_ptr<texture_st> load_texture_from_resource(std::string name, std::string type = "DATA");
 
 }
 }

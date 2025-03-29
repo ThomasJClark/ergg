@@ -1,9 +1,8 @@
-#define WIN32_LEAN_AND_MEAN
-
 #include <filesystem>
 #include <memory>
 #include <thread>
 
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
 #include <spdlog/sinks/daily_file_sink.h>
@@ -42,19 +41,15 @@ static void enable_debug_logging(shared_ptr<spdlog::logger> logger)
     logger->set_level(spdlog::level::trace);
 }
 
-bool WINAPI DllMain(HINSTANCE dll_instance, unsigned int fdw_reason, void *reserved)
+bool WINAPI DllMain(HINSTANCE instance, unsigned int fdw_reason, void *reserved)
 {
     static thread setup_thread;
 
     if (fdw_reason == DLL_PROCESS_ATTACH)
     {
-        wchar_t dll_filename[MAX_PATH] = {0};
-        GetModuleFileNameW(dll_instance, dll_filename, MAX_PATH);
-        auto folder = fs::path{dll_filename}.parent_path();
-
-        auto logger = make_logger(folder / "logs" / "ergg.log");
-
-        gg::config::load_config(folder / "ergg.ini");
+        gg::config::set_handle(instance);
+        auto logger = make_logger(gg::config::mod_folder / "logs" / "ergg.log");
+        gg::config::load();
 
         if (gg::config::debug)
         {

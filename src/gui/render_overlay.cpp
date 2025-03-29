@@ -27,40 +27,28 @@ namespace fs = filesystem;
 
 float gg::gui::scale = 1.f;
 
-static void load_font(fs::path filename)
+static void load_font()
 {
-    auto stream = basic_ifstream<unsigned char>{filename, ios::binary | ios::ate};
-    if (stream.fail())
+    auto resource = gg::config::get_resource("font");
+    if (resource.has_value())
     {
-        SPDLOG_CRITICAL("Failed to load font {}", filename.string());
-        return;
+        auto font_data = resource.value();
+
+        auto font_config = ImFontConfig{};
+        font_config.SizePixels = gg::gui::font_size;
+        font_config.PixelSnapH = false;
+
+        auto &io = ImGui::GetIO();
+        io.Fonts->AddFontFromMemoryCompressedTTF(font_data.data(), font_data.size(), 0,
+                                                 &font_config);
+        io.Fonts->Build();
     }
-
-    auto size = stream.tellg();
-    stream.seekg(0, ios::beg);
-
-    auto data = vector<unsigned char>(size);
-    if (!stream.read(data.data(), size))
-    {
-        SPDLOG_CRITICAL("Failed to load font {}", filename.string());
-        return;
-    }
-
-    auto font_config = ImFontConfig{};
-    font_config.SizePixels = gg::gui::font_size;
-    font_config.PixelSnapH = false;
-
-    auto &io = ImGui::GetIO();
-    io.Fonts->AddFontFromMemoryTTF(data.data(), data.size(), 0, &font_config);
-    io.Fonts->Build();
 }
 
 void gg::gui::initialize_overlay()
 {
     ImGui::GetStyle().WindowBorderSize = 0;
-
-    load_font(gg::config::mod_folder / "assets" / "FOT-Matisse ProN DB.ttf");
-
+    load_font();
     gg::gui::initialize_player_list();
     gg::gui::initialize_logs();
 }

@@ -9,6 +9,8 @@
 using namespace std;
 namespace fs = std::filesystem;
 
+static HINSTANCE mod_handle;
+
 fs::path gg::config::mod_folder;
 
 bool gg::config::show_in_game_name = true;
@@ -71,10 +73,18 @@ static void try_parse_keycode(mINI::INIMap<string> &config, const string &name, 
     }
 };
 
-void gg::config::load_config(const fs::path &ini_path)
+void gg::config::set_handle(HINSTANCE mod_handle)
 {
-    mod_folder = ini_path.parent_path();
+    ::mod_handle = mod_handle;
 
+    wchar_t dll_filename[MAX_PATH] = {0};
+    GetModuleFileNameW(mod_handle, dll_filename, MAX_PATH);
+    mod_folder = fs::path{dll_filename}.parent_path();
+}
+
+void gg::config::load()
+{
+    auto ini_path = mod_folder / "ergg.ini";
     SPDLOG_INFO("Loading config from {}", ini_path.string());
 
     auto file = mINI::INIFile{ini_path.string()};
@@ -130,4 +140,35 @@ void gg::config::load_config(const fs::path &ini_path)
     SPDLOG_INFO("disconnect = 0x{:x}", disconnect_key);
 
     SPDLOG_INFO("debug = {}", debug);
+}
+
+optional<span<unsigned char>> gg::config::get_resource(string name, string type)
+{
+    auto res = FindResourceA(mod_handle, name.data(), type.data());
+    if (!res)
+    {
+        SPDLOG_CRITICAL("Failed to find mod resource ({}) {} {}", GetLastError(), name, type);
+        return {};
+    }
+    auto size = SizeofResource(mod_handle, res);
+    if (!size)
+    {
+        SPDLOG_CRITICAL("Failed to get size of mod resource ({}) {} {}", GetLastError(), name,
+                        type);
+        return {};
+    }
+    auto handle = LoadResource(mod_handle, res);
+    if (!handle)
+    {
+        SPDLOG_CRITICAL("Failed to load mod resource ({}) {} {}", GetLastError(), name, type);
+        return {};
+    }
+    auto data = reinterpret_cast<unsigned char *>(LockResource(handle));
+    if (!data)
+    {
+        SPDLOG_CRITICAL("Failed to get mod resource data ({}) {} {}", GetLastError(), name, type);
+        return {};
+    }
+
+    return span{data, size};
 }

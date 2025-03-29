@@ -21,17 +21,16 @@
 using namespace std;
 
 static const auto number_key_files =
-    array{"KG_Key_1.png", "KG_Key_2.png", "KG_Key_3.png", "KG_Key_4.png", "KG_Key_5.png",
-          "KG_Key_6.png", "KG_Key_7.png", "KG_Key_8.png", "KG_Key_9.png"};
+    array{"KG_Key_1", "KG_Key_2", "KG_Key_3", "KG_Key_4", "KG_Key_5",
+          "KG_Key_6", "KG_Key_7", "KG_Key_8", "KG_Key_9"};
 
 static auto number_key_textures =
     array<shared_ptr<gg::renderer::texture_st>, number_key_files.size()>{};
 
 void gg::gui::initialize_block_player()
 {
-    ranges::transform(number_key_files, number_key_textures.begin(), [](auto file) {
-        return renderer::load_texture_from_file(gg::config::mod_folder / "assets" / file);
-    });
+    ranges::transform(number_key_files, number_key_textures.begin(),
+                      [](auto file) { return renderer::load_texture_from_resource(file); });
 
     initialize_fake_block();
 }

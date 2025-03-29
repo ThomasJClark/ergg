@@ -130,12 +130,9 @@ static void render_player_list_entry(const gg::player_list_entry_st &entry, int 
 
 void gg::gui::initialize_player_list()
 {
-    container_background_texture =
-        renderer::load_texture_from_file(gg::config::mod_folder / "assets/MENU_FL_Equip_waku.png");
-    entry_background_texture =
-        renderer::load_texture_from_file(gg::config::mod_folder / "assets/MENU_FL_Arts_waku3.png");
-    menu_fe_namebase =
-        renderer::load_texture_from_file(gg::config::mod_folder / "assets/MENU_FE_NameBase.png");
+    container_background_texture = renderer::load_texture_from_resource("MENU_FL_Equip_waku");
+    entry_background_texture = renderer::load_texture_from_resource("MENU_FL_Arts_waku3");
+    menu_fe_namebase = renderer::load_texture_from_resource("MENU_FE_NameBase");
 
     initialize_block_player();
     initialize_disconnect();
