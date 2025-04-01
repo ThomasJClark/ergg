@@ -54,7 +54,7 @@ FetchContent_Declare(steamworks-sdk
 
 FetchContent_Declare(elden-x
   GIT_REPOSITORY        https://github.com/ThomasJClark/elden-x.git
-  GIT_TAG               06e664334f3aa9f96266963e0f8c73dd3752db2f)
+  GIT_TAG               d908c22019288a546e48dd73f56c2596d342c9cb)
 
 add_definitions(-D_ITERATOR_DEBUG_LEVEL=0)
 
