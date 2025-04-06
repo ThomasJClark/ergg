@@ -100,6 +100,7 @@ add_library(${PROJECT_NAME} SHARED
   src/config.cpp
   src/dllmain.cpp
   src/fake_block.cpp
+  src/logs.cpp
   src/player_list.cpp
   src/renderer/renderer.cpp
   src/renderer/texture.cpp

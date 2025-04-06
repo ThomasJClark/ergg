@@ -27,6 +27,26 @@ namespace fs = filesystem;
 
 float gg::gui::scale = 1.f;
 
+/*
+
+print(string.format("%X", getAddress("eldenring.exe+2b32900")))
+
+7FF3F6B0CB20
+
+[[[WorldChrMan]+10EF8]+0]
+7FF4B66FF4B0
+
+7FF725A50000
+
+---
+
+CS::CSPlayerIns + 648
+    CSChrAsmModelIns
+
+head model ins = [[[[[WorldChrMan]+10EF8]+0]+648]+38]
+
+*/
+
 static void load_font()
 {
     auto resource = gg::config::get_resource("font");

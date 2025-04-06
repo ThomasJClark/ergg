@@ -2,6 +2,7 @@
 #include "styles.hpp"
 #include "utils.hpp"
 
+#include "../logs.hpp"
 #include "../renderer/texture.hpp"
 
 #include <imgui.h>
@@ -29,23 +30,23 @@ void gg::gui::render_logs(ImVec2 pos, bool is_open)
     auto background_pos = pos + ImVec2{80.f - background_texture->width, 19.f} * scale;
     auto text_pos = background_pos + ImVec2{80.f, 16.f} * scale;
 
-    render_nine_slice(ImGui::GetBackgroundDrawList(), background_texture->desc.second.ptr,
-                      {(float)background_texture->width, (float)background_texture->height},
-                      background_pos, ImVec2{(float)background_texture->width, 274.f} * scale,
-                      ImVec2{0.f, 16.f}, fade_in_out.alpha * .8f);
+    if (ImGui::IsKeyPressed(ImGuiKey_H, false))
+    {
+        gg::logs::log("Hello, world!");
+    }
 
-    ImGui::GetBackgroundDrawList()->AddText(nullptr, 0.f, text_pos,
-                                            ImGui::GetColorU32(gg::gui::white), "Bingus");
-    ImGui::GetBackgroundDrawList()->AddText(nullptr, 0.f, text_pos + ImVec2{0.f, 20.f} * scale,
-                                            ImGui::GetColorU32(gg::gui::white), "Bongus");
-    ImGui::GetBackgroundDrawList()->AddText(nullptr, 0.f, text_pos + ImVec2{0.f, 40.f} * scale,
-                                            ImGui::GetColorU32(gg::gui::white), "Bungus");
-    ImGui::GetBackgroundDrawList()->AddText(nullptr, 0.f, text_pos + ImVec2{0.f, 60.f} * scale,
-                                            ImGui::GetColorU32(gg::gui::white), "Bangus");
-    ImGui::GetBackgroundDrawList()->AddText(nullptr, 0.f, text_pos + ImVec2{0.f, 80.f} * scale,
-                                            ImGui::GetColorU32(gg::gui::white), "Bengus");
-    ImGui::GetBackgroundDrawList()->AddText(nullptr, 0.f, text_pos + ImVec2{0.f, 100.f} * scale,
-                                            ImGui::GetColorU32(gg::gui::white), "Bangus");
+    render_nine_slice(
+        ImGui::GetBackgroundDrawList(), background_texture->desc.second.ptr,
+        {(float)background_texture->width, (float)background_texture->height}, background_pos,
+        ImVec2{(float)background_texture->width, (32.f + gg::logs::size() * 20.f) * scale} * scale,
+        ImVec2{0.f, 16.f}, fade_in_out.alpha * .8f);
+
+    int i = 0;
+    gg::logs::for_each([&](const gg::logs::log_entry_st &entry) {
+        ImGui::GetBackgroundDrawList()->AddText(
+            nullptr, 0.f, text_pos + ImVec2{0.f, i++ * 20.f} * scale,
+            ImGui::GetColorU32(gg::gui::white), entry.message.c_str());
+    });
 
     ImGui::PopStyleVar(ImGuiStyleVar_Alpha);
 }
