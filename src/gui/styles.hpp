@@ -2,10 +2,8 @@
 
 #include <imgui.h>
 
-namespace gg
-{
-namespace gui
-{
+namespace gg {
+namespace gui {
 
 static constexpr auto virtual_size = ImVec2{1920.f, 1080.f};
 

@@ -5,8 +5,6 @@
 
 #include "../config.hpp"
 
-#include <elden-x/chr/world_chr_man.hpp>
-
 #include <spdlog/spdlog.h>
 
 #include <backends/imgui_impl_dx12.h>
@@ -27,31 +25,9 @@ namespace fs = filesystem;
 
 float gg::gui::scale = 1.f;
 
-/*
-
-print(string.format("%X", getAddress("eldenring.exe+2b32900")))
-
-7FF3F6B0CB20
-
-[[[WorldChrMan]+10EF8]+0]
-7FF4B66FF4B0
-
-7FF725A50000
-
----
-
-CS::CSPlayerIns + 648
-    CSChrAsmModelIns
-
-head model ins = [[[[[WorldChrMan]+10EF8]+0]+648]+38]
-
-*/
-
-static void load_font()
-{
+static void load_font() {
     auto resource = gg::config::get_resource("font");
-    if (resource.has_value())
-    {
+    if (resource.has_value()) {
         auto font_data = resource.value();
 
         auto font_config = ImFontConfig{};
@@ -65,16 +41,14 @@ static void load_font()
     }
 }
 
-void gg::gui::initialize_overlay()
-{
+void gg::gui::initialize_overlay() {
     ImGui::GetStyle().WindowBorderSize = 0;
     load_font();
     gg::gui::initialize_player_list();
     gg::gui::initialize_logs();
 }
 
-void gg::gui::render_overlay()
-{
+void gg::gui::render_overlay() {
     auto &io = ImGui::GetIO();
     auto viewport = ImGui::GetMainViewport();
 
@@ -87,27 +61,16 @@ void gg::gui::render_overlay()
     static bool is_player_list_open = true;
     static bool is_logs_open = false;
 
-    if (GetAsyncKeyState(gg::config::toggle_player_list_key) & 1)
-    {
+    if (GetAsyncKeyState(gg::config::toggle_player_list_key) & 1) {
         is_player_list_open = !is_player_list_open;
-        if (is_player_list_open)
-        {
+        if (is_player_list_open) {
             is_logs_open = false;
         }
     }
 
-    if (GetAsyncKeyState(gg::config::toggle_logs_key) & 1)
-    {
-        auto world_chr_man = er::CS::WorldChrManImp::instance();
-        if (world_chr_man && world_chr_man->main_player)
-        {
-            auto &chr_asm = world_chr_man->main_player->game_data->equip_game_data.chr_asm;
-            SPDLOG_INFO("chr_asm = {}", (void *)&chr_asm);
-        }
-
+    if (GetAsyncKeyState(gg::config::toggle_logs_key) & 1) {
         is_logs_open = !is_logs_open;
-        if (is_logs_open)
-        {
+        if (is_logs_open) {
             is_player_list_open = false;
         }
     }

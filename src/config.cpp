@@ -30,51 +30,38 @@ int gg::config::disconnect_key = VK_F4;
 
 bool gg::config::debug = false;
 
-static void try_parse_boolean(mINI::INIMap<string> &config, const string &name, bool &out)
-{
-    if (!config.has(name))
-    {
+static void try_parse_boolean(mINI::INIMap<string> &config, const string &name, bool &out) {
+    if (!config.has(name)) {
         SPDLOG_WARN("Missing config \"{}\"", name);
         return;
     }
 
     auto &value = config[name];
-    if (value == "true")
-    {
+    if (value == "true") {
         out = true;
-    }
-    else if (value == "false")
-    {
+    } else if (value == "false") {
         out = false;
-    }
-    else
-    {
+    } else {
         SPDLOG_WARN("Invalid config value \"{} = {}\"", name, value);
     }
 };
 
-static void try_parse_keycode(mINI::INIMap<string> &config, const string &name, int &out)
-{
-    if (!config.has(name))
-    {
+static void try_parse_keycode(mINI::INIMap<string> &config, const string &name, int &out) {
+    if (!config.has(name)) {
         SPDLOG_WARN("Missing config \"{}\"", name);
         return;
     }
 
     auto &value = config[name];
     int parsed_value;
-    if (value.starts_with("0x") && (parsed_value = strtoul(value.data() + 2, nullptr, 16)))
-    {
+    if (value.starts_with("0x") && (parsed_value = strtoul(value.data() + 2, nullptr, 16))) {
         out = parsed_value;
-    }
-    else
-    {
+    } else {
         SPDLOG_WARN("Invalid config value \"{} = {}\"", name, value);
     }
 };
 
-void gg::config::set_handle(HINSTANCE mod_handle)
-{
+void gg::config::set_handle(HINSTANCE mod_handle) {
     ::mod_handle = mod_handle;
 
     wchar_t dll_filename[MAX_PATH] = {0};
@@ -82,15 +69,13 @@ void gg::config::set_handle(HINSTANCE mod_handle)
     mod_folder = fs::path{dll_filename}.parent_path();
 }
 
-void gg::config::load()
-{
+void gg::config::load() {
     auto ini_path = mod_folder / "ergg.ini";
     SPDLOG_INFO("Loading config from {}", ini_path.string());
 
     auto file = mINI::INIFile{ini_path.string()};
     auto ini = mINI::INIStructure{};
-    if (!file.read(ini))
-    {
+    if (!file.read(ini)) {
         SPDLOG_WARN("Failed to read config");
         return;
     }
@@ -105,12 +90,9 @@ void gg::config::load()
     try_parse_boolean(overlay, "show_ping", show_ping);
     try_parse_boolean(overlay, "show_yourself", show_yourself);
 
-    if (overlay.has("high_ping"))
-    {
+    if (overlay.has("high_ping")) {
         high_ping = strtoul(overlay["high_ping"].data(), nullptr, 10);
-    }
-    else
-    {
+    } else {
         SPDLOG_WARN("Missing config \"high_ping\"", high_ping);
     }
 
@@ -142,30 +124,25 @@ void gg::config::load()
     SPDLOG_INFO("debug = {}", debug);
 }
 
-optional<span<unsigned char>> gg::config::get_resource(string name, string type)
-{
+optional<span<unsigned char>> gg::config::get_resource(string name, string type) {
     auto res = FindResourceA(mod_handle, name.data(), type.data());
-    if (!res)
-    {
+    if (!res) {
         SPDLOG_CRITICAL("Failed to find mod resource ({}) {} {}", GetLastError(), name, type);
         return {};
     }
     auto size = SizeofResource(mod_handle, res);
-    if (!size)
-    {
+    if (!size) {
         SPDLOG_CRITICAL("Failed to get size of mod resource ({}) {} {}", GetLastError(), name,
                         type);
         return {};
     }
     auto handle = LoadResource(mod_handle, res);
-    if (!handle)
-    {
+    if (!handle) {
         SPDLOG_CRITICAL("Failed to load mod resource ({}) {} {}", GetLastError(), name, type);
         return {};
     }
     auto data = reinterpret_cast<unsigned char *>(LockResource(handle));
-    if (!data)
-    {
+    if (!data) {
         SPDLOG_CRITICAL("Failed to get mod resource data ({}) {} {}", GetLastError(), name, type);
         return {};
     }

@@ -33,9 +33,8 @@ static vector<int> free_indexes;
 static ID3D12CommandQueue *command_queue{nullptr};
 static IDXGISwapChain3 *swap_chain{nullptr};
 
-struct render_task_st : public er::CS::CSEzTask
-{
-  private:
+struct render_task : public er::CS::CSEzTask {
+        private:
     /**
      * True if the render has been set up and we can make draw calls each frame
      */
@@ -54,13 +53,12 @@ struct render_task_st : public er::CS::CSEzTask
     function<void()> initialize_callback;
     function<void()> render_callback;
 
-    struct render_target_st
-    {
+    struct render_target {
         ID3D12Resource *resource;
         D3D12_CPU_DESCRIPTOR_HANDLE descriptor_handle;
     };
 
-    vector<render_target_st> render_targets;
+    vector<render_target> render_targets;
 
     ID3D12DescriptorHeap *render_descriptor_heap{nullptr};
     ID3D12DescriptorHeap *back_buffers_descriptor_heap{nullptr};
@@ -69,26 +67,21 @@ struct render_task_st : public er::CS::CSEzTask
     ID3D12GraphicsCommandList *command_list{nullptr};
     ID3D12DescriptorHeap *srv_descriptor_heap{nullptr};
 
-    void release_render_targets()
-    {
-        for (auto &frame : render_targets)
-        {
+    void release_render_targets() {
+        for (auto &frame : render_targets) {
             frame.resource->Release();
         }
     }
 
-    void setup_render_targets()
-    {
-        for (size_t i = 0; i < render_targets.size(); i++)
-        {
+    void setup_render_targets() {
+        for (size_t i = 0; i < render_targets.size(); i++) {
             swap_chain->GetBuffer(i, IID_PPV_ARGS(&render_targets[i].resource));
             gg::renderer::impl::device->CreateRenderTargetView(render_targets[i].resource, nullptr,
                                                                render_targets[i].descriptor_handle);
         }
     }
 
-    void initialize()
-    {
+    void initialize() {
         swap_chain->GetDevice(IID_PPV_ARGS(&gg::renderer::impl::device));
 
         // Allocate a descriptor heap for the frames
@@ -103,8 +96,7 @@ struct render_task_st : public er::CS::CSEzTask
                 .Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE,
             };
             if (gg::renderer::impl::device->CreateDescriptorHeap(
-                    &desc, IID_PPV_ARGS(&render_descriptor_heap)) != S_OK)
-            {
+                    &desc, IID_PPV_ARGS(&render_descriptor_heap)) != S_OK) {
                 return;
             }
         }
@@ -117,8 +109,7 @@ struct render_task_st : public er::CS::CSEzTask
                 .Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE,
             };
             if (gg::renderer::impl::device->CreateDescriptorHeap(
-                    &desc, IID_PPV_ARGS(&srv_descriptor_heap)) != S_OK)
-            {
+                    &desc, IID_PPV_ARGS(&srv_descriptor_heap)) != S_OK) {
                 return;
             }
         }
@@ -129,24 +120,21 @@ struct render_task_st : public er::CS::CSEzTask
             increment_size =
                 gg::renderer::impl::device->GetDescriptorHandleIncrementSize(desc.Type);
             free_indexes.reserve((int)desc.NumDescriptors);
-            for (int n = desc.NumDescriptors; n > 0; n--)
-            {
+            for (int n = desc.NumDescriptors; n > 0; n--) {
                 free_indexes.push_back(n);
             }
         }
 
         // Create the other bullshit you need to use DX12
         if (gg::renderer::impl::device->CreateCommandAllocator(
-                D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&command_allocator)) != S_OK)
-        {
+                D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&command_allocator)) != S_OK) {
             return;
         }
 
         if (gg::renderer::impl::device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT,
                                                           command_allocator, NULL,
                                                           IID_PPV_ARGS(&command_list)) != S_OK ||
-            command_list->Close() != S_OK)
-        {
+            command_list->Close() != S_OK) {
             return;
         }
 
@@ -157,8 +145,7 @@ struct render_task_st : public er::CS::CSEzTask
             .NodeMask = 1,
         };
         if (gg::renderer::impl::device->CreateDescriptorHeap(
-                &back_buffers_heap_desc, IID_PPV_ARGS(&back_buffers_descriptor_heap)) != S_OK)
-        {
+                &back_buffers_heap_desc, IID_PPV_ARGS(&back_buffers_descriptor_heap)) != S_OK) {
             return;
         }
 
@@ -166,8 +153,7 @@ struct render_task_st : public er::CS::CSEzTask
         const auto increment_size = gg::renderer::impl::device->GetDescriptorHandleIncrementSize(
             D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
-        for (size_t i = 0; i < render_targets.size(); i++)
-        {
+        for (size_t i = 0; i < render_targets.size(); i++) {
             render_targets[i].descriptor_handle.ptr = descriptor_handle.ptr + i * increment_size;
         }
 
@@ -201,25 +187,20 @@ struct render_task_st : public er::CS::CSEzTask
         initialized = true;
     }
 
-    void frame_begin()
-    {
-        if (resized)
-        {
+    void frame_begin() {
+        if (resized) {
             resized = false;
             setup_render_targets();
         }
     }
 
-    void draw_step()
-    {
-        if (!command_queue || !swap_chain)
-        {
+    void draw_step() {
+        if (!command_queue || !swap_chain) {
             return;
         }
 
         // Set up ImGui the first time this is called
-        if (!initialized)
-        {
+        if (!initialized) {
             initialize();
         }
 
@@ -260,38 +241,33 @@ struct render_task_st : public er::CS::CSEzTask
             1, reinterpret_cast<ID3D12CommandList *const *>(&command_list));
     }
 
-    void frame_end()
-    {
+    void frame_end() {
         auto window = er::CS::CSWindow::instance();
-        if (window && initialized && window->window_size != prev_window_size)
-        {
+        if (window && initialized && window->window_size != prev_window_size) {
             resized = true;
             prev_window_size = window->window_size;
             release_render_targets();
         }
     }
 
-  public:
-    render_task_st(function<void()> initialize_callback, function<void()> render_callback)
-        : initialize_callback(initialize_callback), render_callback(render_callback)
-    {
-    }
+        public:
+    render_task(function<void()> initialize_callback, function<void()> render_callback)
+        : initialize_callback(initialize_callback),
+          render_callback(render_callback) {}
 
-    virtual void execute(er::FD4::task_data *data) override
-    {
-        switch (data->group)
-        {
-        case er::task_group::FrameBegin:
-            frame_begin();
-            break;
+    virtual void execute(er::FD4::task_data *data) override {
+        switch (data->group) {
+            case er::task_group::FrameBegin:
+                frame_begin();
+                break;
 
-        case er::task_group::DrawStep:
-            draw_step();
-            break;
+            case er::task_group::DrawStep:
+                draw_step();
+                break;
 
-        case er::task_group::FrameEnd:
-            frame_end();
-            break;
+            case er::task_group::FrameEnd:
+                frame_end();
+                break;
         }
     }
 };
@@ -304,10 +280,8 @@ struct render_task_st : public er::CS::CSEzTask
  * https://learn.microsoft.com/en-us/windows/win32/api/winuser/nc-winuser-wndproc
  */
 static WNDPROC wndproc;
-static LRESULT wndproc_hook(HWND hwnd, unsigned int msg, WPARAM wparam, LPARAM lparam)
-{
-    if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam))
-    {
+static LRESULT wndproc_hook(HWND hwnd, unsigned int msg, WPARAM wparam, LPARAM lparam) {
+    if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam)) {
         return true;
     }
 
@@ -322,11 +296,10 @@ static LRESULT wndproc_hook(HWND hwnd, unsigned int msg, WPARAM wparam, LPARAM l
  * https://learn.microsoft.com/en-us/windows/win32/api/dxgi/nf-dxgi-idxgiswapchain-present
  */
 static HRESULT(APIENTRY *swap_chain_present)(IDXGISwapChain3 *, unsigned int, unsigned int);
-static HRESULT APIENTRY swap_chain_present_hook(IDXGISwapChain3 *_this, unsigned int sync_interval,
-                                                unsigned int flags)
-{
-    if (command_queue)
-    {
+static HRESULT APIENTRY swap_chain_present_hook(IDXGISwapChain3 *_this,
+                                                unsigned int sync_interval,
+                                                unsigned int flags) {
+    if (command_queue) {
         swap_chain = _this;
     }
 
@@ -341,39 +314,35 @@ static HRESULT APIENTRY swap_chain_present_hook(IDXGISwapChain3 *_this, unsigned
  *
  * https://learn.microsoft.com/en-us/windows/win32/api/d3d12/nf-d3d12-id3d12commandqueue-executecommandlists
  */
-static void(APIENTRY *command_queue_execute_command_lists)(ID3D12CommandQueue *, unsigned int,
+static void(APIENTRY *command_queue_execute_command_lists)(ID3D12CommandQueue *,
+                                                           unsigned int,
                                                            ID3D12CommandList *);
 static void command_queue_execute_command_lists_hook(ID3D12CommandQueue *_this,
                                                      UINT command_list_count,
-                                                     ID3D12CommandList *command_lists)
-{
+                                                     ID3D12CommandList *command_lists) {
     // Don't hijack the command queue until we have evidence it's ready. The easiest way to do that
     // is by checking that something that requires it is initialized.
-    if (!command_queue && er::CS::CSMenuManImp::instance() != nullptr)
-    {
+    if (!command_queue && er::CS::CSMenuManImp::instance() != nullptr) {
         command_queue = _this;
     }
 
     command_queue_execute_command_lists(_this, command_list_count, command_lists);
 }
 
-gg::renderer::impl::descriptor_pair gg::renderer::impl::alloc_descriptor()
-{
+gg::renderer::impl::descriptor_pair gg::renderer::impl::alloc_descriptor() {
     auto index = free_indexes.back();
     free_indexes.pop_back();
     return gg::renderer::impl::descriptor_pair{heap_start_cpu.ptr + (index * increment_size),
                                                heap_start_gpu.ptr + (index * increment_size)};
 }
 
-void gg::renderer::impl::free_descriptor(gg::renderer::impl::descriptor_pair pair)
-{
+void gg::renderer::impl::free_descriptor(gg::renderer::impl::descriptor_pair pair) {
     int index = (int)((pair.first.ptr - heap_start_cpu.ptr) / increment_size);
     free_indexes.push_back(index);
 }
 
 void gg::renderer::initialize(function<void()> initialize_callback,
-                              function<void()> render_callback)
-{
+                              function<void()> render_callback) {
     auto hwnd = er::CS::CSWindow::instance()->hwnd;
     wndproc = (WNDPROC)SetWindowLongPtrW(hwnd, GWLP_WNDPROC, (LONG_PTR)wndproc_hook);
 
@@ -385,9 +354,9 @@ void gg::renderer::initialize(function<void()> initialize_callback,
 
     // Register a task to draw the overlay. This could also be done in the DX12 hook, but that
     // tends not to play nicely with capture software and other overlays.
-    static auto render_task = render_task_st{initialize_callback, render_callback};
+    static auto task = render_task{initialize_callback, render_callback};
     auto task_man = er::CS::CSTask::instance();
-    task_man->register_task(er::task_group::FrameBegin, render_task);
-    task_man->register_task(er::task_group::DrawStep, render_task);
-    task_man->register_task(er::task_group::FrameEnd, render_task);
+    task_man->register_task(er::task_group::FrameBegin, task);
+    task_man->register_task(er::task_group::DrawStep, task);
+    task_man->register_task(er::task_group::FrameEnd, task);
 }

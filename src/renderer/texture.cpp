@@ -17,9 +17,8 @@
 using namespace std;
 namespace fs = std::filesystem;
 
-shared_ptr<gg::renderer::texture_st> gg::renderer::load_texture_from_raw_data(
-    unsigned char *image_data, int width, int height)
-{
+shared_ptr<gg::renderer::texture> gg::renderer::load_texture_from_raw_data(
+    unsigned char *image_data, int width, int height) {
     auto &device = gg::renderer::impl::device;
 
     auto upload_pitch = (width * 4 + D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1u) &
@@ -51,8 +50,7 @@ shared_ptr<gg::renderer::texture_st> gg::renderer::load_texture_from_raw_data(
     ID3D12Resource *texture;
     if (!CHECK_RESULT(device->CreateCommittedResource(&props, D3D12_HEAP_FLAG_NONE, &desc,
                                                       D3D12_RESOURCE_STATE_COPY_DEST, NULL,
-                                                      IID_PPV_ARGS(&texture))))
-    {
+                                                      IID_PPV_ARGS(&texture)))) {
         return nullptr;
     }
 
@@ -75,16 +73,14 @@ shared_ptr<gg::renderer::texture_st> gg::renderer::load_texture_from_raw_data(
     ID3D12Resource *buffer;
     if (!CHECK_RESULT(device->CreateCommittedResource(&props, D3D12_HEAP_FLAG_NONE, &desc,
                                                       D3D12_RESOURCE_STATE_GENERIC_READ, NULL,
-                                                      IID_PPV_ARGS(&buffer))))
-    {
+                                                      IID_PPV_ARGS(&buffer)))) {
         return nullptr;
     }
 
     // Write pixels into the upload resource
     void *mapped;
     auto range = D3D12_RANGE{0, upload_size};
-    if (!CHECK_RESULT(buffer->Map(0, &range, &mapped)))
-    {
+    if (!CHECK_RESULT(buffer->Map(0, &range, &mapped))) {
         return nullptr;
     }
 
@@ -142,20 +138,18 @@ shared_ptr<gg::renderer::texture_st> gg::renderer::load_texture_from_raw_data(
 
     command_list->CopyTextureRegion(&dstlocation, 0, 0, 0, &srclocation, nullptr);
     command_list->ResourceBarrier(1, &barrier);
-    if (!CHECK_RESULT(command_list->Close()))
-        return nullptr;
+    if (!CHECK_RESULT(command_list->Close())) return nullptr;
 
     // Execute the copy
     command_queue->ExecuteCommandLists(1, (ID3D12CommandList *const *)&command_list);
-    if (!CHECK_RESULT(command_queue->Signal(fence, 1)))
-        return nullptr;
+    if (!CHECK_RESULT(command_queue->Signal(fence, 1))) return nullptr;
 
     // Wait for everything to complete
     auto event = CreateEvent(0, 0, 0, 0);
     fence->SetEventOnCompletion(1, event);
     WaitForSingleObject(event, INFINITE);
 
-    auto result = make_shared<texture_st>(texture, width, height);
+    auto result = make_shared<gg::renderer::texture>(texture, width, height);
 
     // Create a shader resource view for the texture
     auto srvdesc = D3D12_SHADER_RESOURCE_VIEW_DESC{
@@ -178,13 +172,10 @@ shared_ptr<gg::renderer::texture_st> gg::renderer::load_texture_from_raw_data(
     return result;
 }
 
-shared_ptr<gg::renderer::texture_st> gg::renderer::load_texture_from_memory(
-    span<unsigned char> data)
-{
+shared_ptr<gg::renderer::texture> gg::renderer::load_texture_from_memory(span<unsigned char> data) {
     int width, height;
     auto image_data = stbi_load_from_memory(data.data(), data.size(), &width, &height, nullptr, 4);
-    if (!image_data)
-        return nullptr;
+    if (!image_data) return nullptr;
 
     auto result = load_texture_from_raw_data(image_data, width, height);
 
@@ -193,11 +184,9 @@ shared_ptr<gg::renderer::texture_st> gg::renderer::load_texture_from_memory(
     return result;
 }
 
-shared_ptr<gg::renderer::texture_st> gg::renderer::load_texture_from_file(fs::path filename)
-{
+shared_ptr<gg::renderer::texture> gg::renderer::load_texture_from_file(fs::path filename) {
     auto stream = basic_ifstream<unsigned char>{filename, ios::binary | ios::ate};
-    if (stream.fail())
-    {
+    if (stream.fail()) {
         SPDLOG_CRITICAL("Failed to load texture {}", filename.string());
         return nullptr;
     }
@@ -206,8 +195,7 @@ shared_ptr<gg::renderer::texture_st> gg::renderer::load_texture_from_file(fs::pa
     stream.seekg(0, ios::beg);
 
     auto data = vector<unsigned char>(size);
-    if (!stream.read(data.data(), size))
-    {
+    if (!stream.read(data.data(), size)) {
         SPDLOG_CRITICAL("Failed to load texture {}", filename.string());
         return nullptr;
     }
@@ -215,9 +203,8 @@ shared_ptr<gg::renderer::texture_st> gg::renderer::load_texture_from_file(fs::pa
     return load_texture_from_memory(data);
 }
 
-shared_ptr<gg::renderer::texture_st> gg::renderer::load_texture_from_resource(string name,
-                                                                              string type)
-{
+shared_ptr<gg::renderer::texture> gg::renderer::load_texture_from_resource(string name,
+                                                                           string type) {
     auto texture_data = config::get_resource(name, type);
     return texture_data.has_value() ? load_texture_from_memory(texture_data.value()) : nullptr;
 }

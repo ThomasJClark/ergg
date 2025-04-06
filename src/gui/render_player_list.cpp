@@ -19,15 +19,14 @@ using namespace std;
 
 static const auto vip_steam_id = CSteamID{108371544u, k_EUniversePublic, k_EAccountTypeIndividual};
 
-static shared_ptr<gg::renderer::texture_st> container_background_texture;
-static shared_ptr<gg::renderer::texture_st> entry_background_texture;
-static shared_ptr<gg::renderer::texture_st> menu_fe_namebase;
+static shared_ptr<gg::renderer::texture> container_background_texture;
+static shared_ptr<gg::renderer::texture> entry_background_texture;
+static shared_ptr<gg::renderer::texture> menu_fe_namebase;
 
 /**
  * Draw saved information about a player in the game session to an ImGui table row
  */
-static void render_player_list_entry(const gg::player_list_entry_st &entry, int index)
-{
+static void render_player_list_entry(const gg::player_list_entry &entry, int index) {
     auto text_offset_y = ceilf((gg::gui::player_list_row_height - gg::gui::font_size) / 2);
     auto avatar_offset_y =
         ceilf((gg::gui::player_list_row_height - gg::gui::player_list_avatar_size.y) / 2);
@@ -35,33 +34,25 @@ static void render_player_list_entry(const gg::player_list_entry_st &entry, int 
     // Color friends in green, blocked players in red, and me in blue
     auto color = ImVec4{};
     if (gg::config::show_steam_relationship &&
-        entry.steam_relationship == k_EFriendRelationshipFriend)
-    {
+        entry.steam_relationship == k_EFriendRelationshipFriend) {
         color = gg::gui::green;
-    }
-    else if (gg::config::show_steam_relationship &&
-             entry.steam_relationship == k_EFriendRelationshipIgnored)
-    {
+    } else if (gg::config::show_steam_relationship &&
+               entry.steam_relationship == k_EFriendRelationshipIgnored) {
         color = gg::gui::red;
-    }
-    else if (entry.player && entry.player->session_holder.network_session &&
-             entry.player->session_holder.network_session->steam_id == vip_steam_id)
-    {
+    } else if (entry.player && entry.player->session_holder.network_session &&
+               entry.player->session_holder.network_session->steam_id == vip_steam_id) {
         color = gg::gui::blue;
     }
 
     ImGui::TableNextRow(ImGuiTableRowFlags_None, gg::gui::player_list_row_height * gg::gui::scale);
 
     // Column 1 - render the avatar on the player's Steam profile, if there is one
-    if (gg::config::show_steam_avatar)
-    {
+    if (gg::config::show_steam_avatar) {
         ImGui::TableNextColumn();
         ImGui::SetCursorPosY(ImGui::GetCursorPosY() + avatar_offset_y * gg::gui::scale);
-        if (entry.steam_avatar)
-        {
+        if (entry.steam_avatar) {
             // Outline the avatar with the highlight color, if any
-            if (color.w)
-            {
+            if (color.w) {
                 ImGui::GetForegroundDrawList()->AddRect(
                     ImGui::GetCursorScreenPos() - ImVec2{.5f, .5f} * gg::gui::scale,
                     ImGui::GetCursorScreenPos() +
@@ -82,54 +73,41 @@ static void render_player_list_entry(const gg::player_list_entry_st &entry, int 
 
     ImGui::TableNextColumn();
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + text_offset_y * gg::gui::scale);
-    if (show_in_game_name)
-    {
+    if (show_in_game_name) {
         ImGui::TextColored(name_color, "%s", entry.in_game_name.data());
-        if (show_steam_name)
-        {
+        if (show_steam_name) {
             ImGui::SameLine(0.f, 0.f);
             ImGui::TextColored(gg::gui::pale_gold, " (%s)", entry.steam_name.data());
         }
-    }
-    else if (show_steam_name)
-    {
+    } else if (show_steam_name) {
         ImGui::TextColored(name_color, "%s", entry.steam_name.data());
-    }
-    else
-    {
+    } else {
         ImGui::TextColored(name_color, "Player %d", index + 1);
     }
 
     // Column 3 - rune level
-    if (gg::config::show_level)
-    {
+    if (gg::config::show_level) {
         ImGui::TableNextColumn();
         ImGui::SetCursorPosY(ImGui::GetCursorPosY() + text_offset_y * gg::gui::scale);
-        if (entry.player)
-        {
+        if (entry.player) {
             ImGui::TextColored(gg::gui::white, "Level %d", entry.player->game_data->rune_level);
-        }
-        else
-        {
+        } else {
             ImGui::TextColored(gg::gui::white, "Level 90");
         }
     }
 
     // Column 4 - ping time estimated by Steam
-    if (gg::config::show_ping)
-    {
+    if (gg::config::show_ping) {
         ImGui::TableNextColumn();
         ImGui::SetCursorPosY(ImGui::GetCursorPosY() + text_offset_y * gg::gui::scale);
-        if (entry.steam_ping > 0)
-        {
+        if (entry.steam_ping > 0) {
             auto color = entry.steam_ping > gg::config::high_ping ? gg::gui::red : gg::gui::white;
             ImGui::TextColored(color, "%dms", entry.steam_ping);
         }
     }
 }
 
-void gg::gui::initialize_player_list()
-{
+void gg::gui::initialize_player_list() {
     container_background_texture = renderer::load_texture_from_resource("MENU_FL_Equip_waku");
     entry_background_texture = renderer::load_texture_from_resource("MENU_FL_Arts_waku3");
     menu_fe_namebase = renderer::load_texture_from_resource("MENU_FE_NameBase");
@@ -138,9 +116,8 @@ void gg::gui::initialize_player_list()
     initialize_disconnect();
 }
 
-void gg::gui::render_player_list(ImVec2 pos, bool is_open)
-{
-    static fade_in_out_st fade_in_out;
+void gg::gui::render_player_list(ImVec2 pos, bool is_open) {
+    static fade_in_out fade_in_out;
     static bool is_block_player_open = false;
     static bool is_disconnect_open = false;
 
@@ -150,8 +127,7 @@ void gg::gui::render_player_list(ImVec2 pos, bool is_open)
         ranges::count_if(player_list_entries, [](auto entry) { return entry.has_value(); });
 
     // Skip rendering the overlay if there are no entries, so we don't ever show a blank rectangle
-    if (!fade_in_out.animate(player_count > 0 && is_open))
-    {
+    if (!fade_in_out.animate(player_count > 0 && is_open)) {
         is_block_player_open = false;
         is_disconnect_open = false;
         return;
@@ -170,19 +146,14 @@ void gg::gui::render_player_list(ImVec2 pos, bool is_open)
                      ImGuiWindowFlags_NoNav);
 
     int column_count = 1;
-    if (config::show_steam_avatar)
-        column_count++;
-    if (config::show_ping)
-        column_count++;
-    if (config::show_level)
-        column_count++;
+    if (config::show_steam_avatar) column_count++;
+    if (config::show_ping) column_count++;
+    if (config::show_level) column_count++;
 
     ImGui::BeginTable("player_list_table", column_count);
     int index = 0;
-    for (auto &entry : player_list_entries)
-    {
-        if (entry.has_value())
-        {
+    for (auto &entry : player_list_entries) {
+        if (entry.has_value()) {
             index++;
             render_player_list_entry(entry.value(), index);
         }
@@ -195,8 +166,7 @@ void gg::gui::render_player_list(ImVec2 pos, bool is_open)
     ImGui::End();
 
     // Draw a background behind the entire overlay
-    if (container_background_texture)
-    {
+    if (container_background_texture) {
         auto padding = ImVec2{32, 28} * scale;
         auto pos = windowpos - padding;
         auto size = windowsize + padding * 2.f;
@@ -208,13 +178,11 @@ void gg::gui::render_player_list(ImVec2 pos, bool is_open)
     }
 
     // Draw a transprent texture behind each entry in the list
-    if (menu_fe_namebase)
-    {
+    if (menu_fe_namebase) {
         auto padding = ImVec2{16.f, 0.f} * scale;
         auto pos = windowpos - padding;
         auto size = ImVec2{windowsize.x, player_list_row_height * scale} + padding * 2.f;
-        for (int i = 0; i < player_count; i++)
-        {
+        for (int i = 0; i < player_count; i++) {
             render_nine_slice(ImGui::GetBackgroundDrawList(), menu_fe_namebase->desc.second.ptr,
                               {(float)menu_fe_namebase->width, (float)menu_fe_namebase->height},
                               pos, size, {36.f, 0.f}, .8f);
@@ -224,17 +192,13 @@ void gg::gui::render_player_list(ImVec2 pos, bool is_open)
     }
 
     // Cross out dead players
-    if (entry_background_texture)
-    {
+    if (entry_background_texture) {
         auto pos = windowpos - ImVec2{10.f, 8.f} * scale;
         auto size =
             ImVec2{windowsize.x, player_list_row_height * scale} + ImVec2{12.f, 15.f} * scale;
-        for (auto entry : player_list_entries)
-        {
-            if (entry.has_value())
-            {
-                if (entry->player && entry->player->game_data->hp == 0)
-                {
+        for (auto entry : player_list_entries) {
+            if (entry.has_value()) {
+                if (entry->player && entry->player->game_data->hp == 0) {
                     render_nine_slice(ImGui::GetForegroundDrawList(),
                                       entry_background_texture->desc.second.ptr,
                                       {(float)entry_background_texture->width / 2.f,

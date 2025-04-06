@@ -7,10 +7,10 @@
 #include "../config.hpp"
 #include "../renderer/texture.hpp"
 
-#include <elden-x/session.hpp>
 #include <imgui.h>
 #include <spdlog/spdlog.h>
 #include <windows.h>
+#include <elden-x/session.hpp>
 
 #include <memory>
 #include <string>
@@ -19,29 +19,23 @@ using namespace std;
 
 static string prompt = "Press again to disconnect, or ESC to cancel";
 
-shared_ptr<gg::renderer::texture_st> background_texture;
+shared_ptr<gg::renderer::texture> background_texture;
 
-void gg::gui::initialize_disconnect()
-{
+void gg::gui::initialize_disconnect() {
     background_texture = gg::renderer::load_texture_from_resource("MENU_FE_Warning");
 }
 
-void gg::gui::render_disconnect(bool &is_open, const ImVec2 &windowpos, const ImVec2 &windowsize)
-{
-    if (GetAsyncKeyState(gg::config::disconnect_key) & 1)
-    {
+void gg::gui::render_disconnect(bool &is_open, const ImVec2 &windowpos, const ImVec2 &windowsize) {
+    if (GetAsyncKeyState(gg::config::disconnect_key) & 1) {
         // Require a second press to confirm, to prevent accidental disconnects
-        if (is_open)
-        {
+        if (is_open) {
             SPDLOG_INFO("Disconnecting from online session");
 
             auto session_man = er::CS::CSSessionManager::instance();
-            if (session_man)
-            {
+            if (session_man) {
                 // AFAIK there's only one session at a time, but this seems to be treated as a list
                 // according to vanilla session manager functions
-                for (auto session : session_man->sessions())
-                {
+                for (auto session : session_man->sessions()) {
                     session_man->end_session(session);
                 }
             }
@@ -50,14 +44,12 @@ void gg::gui::render_disconnect(bool &is_open, const ImVec2 &windowpos, const Im
         is_open = !is_open;
     }
 
-    if (is_open && GetAsyncKeyState(VK_ESCAPE) & 1)
-    {
+    if (is_open && GetAsyncKeyState(VK_ESCAPE) & 1) {
         is_open = false;
     }
 
-    static fade_in_out_st fade_in_out;
-    if (fade_in_out.animate(is_open))
-    {
+    static fade_in_out fade_in_out;
+    if (fade_in_out.animate(is_open)) {
         auto pos = windowpos;
         pos.y += windowsize.y + 24.f;
 

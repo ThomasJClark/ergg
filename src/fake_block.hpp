@@ -2,8 +2,7 @@
 
 #include <steam/steamclientpublic.h>
 
-namespace gg
-{
+namespace gg {
 
 void initialize_fake_block();
 

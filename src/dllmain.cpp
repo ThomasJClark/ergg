@@ -19,8 +19,7 @@
 using namespace std;
 namespace fs = std::filesystem;
 
-static shared_ptr<spdlog::logger> make_logger(const fs::path &path)
-{
+static shared_ptr<spdlog::logger> make_logger(const fs::path &path) {
     auto logger = make_shared<spdlog::logger>("gg");
     logger->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%n] %^[%l]%$ %v");
     logger->sinks().push_back(
@@ -29,8 +28,7 @@ static shared_ptr<spdlog::logger> make_logger(const fs::path &path)
     return logger;
 }
 
-static void enable_debug_logging(shared_ptr<spdlog::logger> logger)
-{
+static void enable_debug_logging(shared_ptr<spdlog::logger> logger) {
     AllocConsole();
     FILE *stream;
     freopen_s(&stream, "CONOUT$", "w", stdout);
@@ -41,42 +39,34 @@ static void enable_debug_logging(shared_ptr<spdlog::logger> logger)
     logger->set_level(spdlog::level::trace);
 }
 
-bool WINAPI DllMain(HINSTANCE instance, unsigned int fdw_reason, void *reserved)
-{
+bool WINAPI DllMain(HINSTANCE instance, unsigned int fdw_reason, void *reserved) {
     static thread setup_thread;
 
-    if (fdw_reason == DLL_PROCESS_ATTACH)
-    {
+    if (fdw_reason == DLL_PROCESS_ATTACH) {
         gg::config::set_handle(instance);
         auto logger = make_logger(gg::config::mod_folder / "logs" / "ergg.log");
         gg::config::load();
 
-        if (gg::config::debug)
-        {
+        if (gg::config::debug) {
             enable_debug_logging(logger);
         }
 
         setup_thread = thread([]() {
-            try
-            {
+            try {
                 modutils::initialize();
                 this_thread::sleep_for(chrono::seconds(2));
                 er::FD4::find_singletons();
 
-                // Hook into the DirectX 12 rendering, and add a callback to render the overlay
-                // UI using ImGui
+                // Hook into the DirectX 12 rendering, and add a
+                // callback to render the overlay UI using ImGui
                 gg::renderer::initialize(gg::gui::initialize_overlay, gg::gui::render_overlay);
-            }
-            catch (runtime_error &e)
-            {
+            } catch (runtime_error &e) {
                 SPDLOG_ERROR("{}", e.what());
             }
         });
 
         return true;
-    }
-    else if (fdw_reason == DLL_PROCESS_DETACH && reserved)
-    {
+    } else if (fdw_reason == DLL_PROCESS_DETACH && reserved) {
         setup_thread.join();
         modutils::deinitialize();
         spdlog::shutdown();
@@ -87,17 +77,12 @@ bool WINAPI DllMain(HINSTANCE instance, unsigned int fdw_reason, void *reserved)
 
 // Set up an empty ModEngine2 extension simply to avoid "is not a modengine extension" log
 // warnings
-extern "C" __declspec(dllexport) bool modengine_ext_init(void *connector, void **extension)
-{
-    static struct dummy_modengine_extension_st
-    {
-        virtual ~dummy_modengine_extension_st() = default;
+extern "C" __declspec(dllexport) bool modengine_ext_init(void *connector, void **extension) {
+    static struct dummy_modengine_extension {
+        virtual ~dummy_modengine_extension() = default;
         virtual void on_attach(){};
         virtual void on_detach(){};
-        virtual const char *id()
-        {
-            return "gg";
-        };
+        virtual const char *id() { return "gg"; };
     } modengine_extension;
 
     *extension = &modengine_extension;

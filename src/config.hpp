@@ -7,10 +7,8 @@
 #include <span>
 #include <string>
 
-namespace gg
-{
-namespace config
-{
+namespace gg {
+namespace config {
 
 extern std::filesystem::path mod_folder;
 

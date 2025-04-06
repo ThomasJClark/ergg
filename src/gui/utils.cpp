@@ -5,9 +5,14 @@
 
 using namespace std;
 
-void gg::gui::render_nine_slice(ImDrawList *drawlist, ImTextureID texture_id, ImVec2 texture_size,
-                                ImVec2 pos, ImVec2 size, ImVec2 padding, float opacity, bool debug)
-{
+void gg::gui::render_nine_slice(ImDrawList *drawlist,
+                                ImTextureID texture_id,
+                                ImVec2 texture_size,
+                                ImVec2 pos,
+                                ImVec2 size,
+                                ImVec2 padding,
+                                float opacity,
+                                bool debug) {
     texture_size *= scale;
     padding *= scale;
 
@@ -20,26 +25,21 @@ void gg::gui::render_nine_slice(ImDrawList *drawlist, ImTextureID texture_id, Im
 
     // If the size is too small to fit the padding, shrink the top/bottom or left/right rects to
     // half of the size
-    if (verts[1].x > verts[2].x)
-    {
+    if (verts[1].x > verts[2].x) {
         verts[1].x = verts[2].x = pos.x + size.x / 2.f;
         uvs[1].x = size.x / 2.f / texture_size.x;
         uvs[2].x = 1.f - uvs[1].x;
     }
 
-    if (verts[1].y > verts[2].y)
-    {
+    if (verts[1].y > verts[2].y) {
         verts[1].y = verts[2].y = pos.y + size.y / 2.f;
         uvs[1].y = size.y / 2.f / texture_size.y;
         uvs[2].y = 1.f - uvs[1].y;
     }
 
-    for (int i = 0; i < 3; i++)
-    {
-        for (int j = 0; j < 3; j++)
-        {
-            if (verts[i].x == verts[i + 1].x || verts[j].y == verts[j + 1].y)
-                continue;
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            if (verts[i].x == verts[i + 1].x || verts[j].y == verts[j + 1].y) continue;
 
             drawlist->AddImage(texture_id, {verts[i].x, verts[j].y},
                                {verts[i + 1].x, verts[j + 1].y}, {uvs[i].x, uvs[j].y},
@@ -47,8 +47,7 @@ void gg::gui::render_nine_slice(ImDrawList *drawlist, ImTextureID texture_id, Im
         }
     }
 
-    if (debug)
-    {
+    if (debug) {
         drawlist->AddRect(verts[0], verts[3], ImGui::GetColorU32(blue));
         drawlist->AddRect(verts[1], verts[2], ImGui::GetColorU32(gold));
     }

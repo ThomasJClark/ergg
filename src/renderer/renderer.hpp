@@ -5,12 +5,9 @@
 
 #include <functional>
 
-namespace gg
-{
-namespace renderer
-{
-namespace impl
-{
+namespace gg {
+namespace renderer {
+namespace impl {
 
 extern ID3D12Device *device;
 
