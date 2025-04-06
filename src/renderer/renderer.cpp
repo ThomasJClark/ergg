@@ -34,7 +34,7 @@ static ID3D12CommandQueue *command_queue{nullptr};
 static IDXGISwapChain3 *swap_chain{nullptr};
 
 struct render_task : public er::CS::CSEzTask {
-        private:
+private:
     /**
      * True if the render has been set up and we can make draw calls each frame
      */
@@ -245,12 +245,12 @@ struct render_task : public er::CS::CSEzTask {
         auto window = er::CS::CSWindow::instance();
         if (window && initialized && window->window_size != prev_window_size) {
             resized = true;
-            prev_window_size = window->window_size;
             release_render_targets();
         }
+        prev_window_size = window->window_size;
     }
 
-        public:
+public:
     render_task(function<void()> initialize_callback, function<void()> render_callback)
         : initialize_callback(initialize_callback),
           render_callback(render_callback) {}
@@ -322,7 +322,7 @@ static void command_queue_execute_command_lists_hook(ID3D12CommandQueue *_this,
                                                      ID3D12CommandList *command_lists) {
     // Don't hijack the command queue until we have evidence it's ready. The easiest way to do that
     // is by checking that something that requires it is initialized.
-    if (!command_queue && er::CS::CSMenuManImp::instance() != nullptr) {
+    if (!command_queue && er::CS::CSMenuMan::instance() != nullptr) {
         command_queue = _this;
     }
 

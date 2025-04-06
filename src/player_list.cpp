@@ -76,7 +76,7 @@ void gg::update_player_list() {
         return;
     }
 
-    auto world_chr_man = er::CS::WorldChrManImp::instance();
+    auto world_chr_man = er::CS::WorldChrMan::instance();
     if (!world_chr_man) {
         player_list_entries.clear();
         return;

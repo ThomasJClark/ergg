@@ -1,3 +1,5 @@
+#define SPDLOG_USE_STD_FORMAT 1
+
 #include <filesystem>
 #include <memory>
 #include <thread>
@@ -5,6 +7,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
+#include <spdlog/pattern_formatter.h>
 #include <spdlog/sinks/daily_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
@@ -14,16 +17,37 @@
 
 #include "config.hpp"
 #include "gui/render_overlay.hpp"
+#include "logs.hpp"
 #include "renderer/renderer.hpp"
 
 using namespace std;
 namespace fs = std::filesystem;
+
+class overlay_sink : public spdlog::sinks::sink {
+protected:
+    unique_ptr<spdlog::formatter> formatter;
+
+public:
+    overlay_sink()
+        : formatter(make_unique<spdlog::pattern_formatter>("%v")) {}
+
+    virtual void log(const spdlog::details::log_msg &msg) {
+        string str;
+        formatter->format(msg, str);
+        gg::logs::log(move(str));
+    }
+
+    virtual void flush() {}
+    virtual void set_pattern(const string &pattern) {}
+    virtual void set_formatter(unique_ptr<spdlog::formatter> sink_formatter) {}
+};
 
 static shared_ptr<spdlog::logger> make_logger(const fs::path &path) {
     auto logger = make_shared<spdlog::logger>("gg");
     logger->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%n] %^[%l]%$ %v");
     logger->sinks().push_back(
         make_shared<spdlog::sinks::daily_file_sink_st>(path.string(), 0, 0, false, 5));
+    logger->sinks().push_back(make_shared<overlay_sink>());
     spdlog::set_default_logger(logger);
     return logger;
 }

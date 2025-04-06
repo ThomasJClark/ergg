@@ -8,8 +8,6 @@ namespace logs {
 
 struct log_entry {
     std::string message;
-    int x;
-    int y;
 };
 
 namespace impl {
