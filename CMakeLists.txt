@@ -23,14 +23,6 @@ FetchContent_Declare(spdlog
   GIT_REPOSITORY        https://github.com/gabime/spdlog.git
   GIT_TAG               v1.13.0)
 
-FetchContent_Declare(kiero
-  GIT_REPOSITORY        https://github.com/Rebzzel/kiero
-  GIT_TAG               1.2.12
-  CONFIGURE_COMMAND     ""
-  BUILD_COMMAND         ""
-  PATCH_COMMAND         git apply ${CMAKE_CURRENT_SOURCE_DIR}/third_party/kiero.patch
-  UPDATE_DISCONNECTED   1)
-
 FetchContent_Declare(imgui
   GIT_REPOSITORY        https://github.com/ocornut/imgui.git
   GIT_TAG               v1.91.6
@@ -54,14 +46,13 @@ FetchContent_Declare(steamworks-sdk
 
 FetchContent_Declare(elden-x
   GIT_REPOSITORY        https://github.com/ThomasJClark/elden-x.git
-  GIT_TAG               4ecdad7edbf4f5906e0c295ad4ddbbd1308c61ba)
+  GIT_TAG               0de658007d6f4563cc1cee03b9d04c399cf69146)
 
 add_definitions(-D_ITERATOR_DEBUG_LEVEL=0)
 
 FetchContent_MakeAvailable(
   mini
   spdlog
-  kiero
   imgui
   stb
   freetype
@@ -85,9 +76,6 @@ target_include_directories(imgui PUBLIC ${imgui_SOURCE_DIR})
 
 add_library(stb INTERFACE)
 target_include_directories(stb INTERFACE ${stb_SOURCE_DIR})
-
-add_library(kiero ${kiero_SOURCE_DIR}/kiero.cpp)
-target_include_directories(kiero INTERFACE ${kiero_SOURCE_DIR})
 
 add_library(steamworks-sdk STATIC IMPORTED GLOBAL)
 target_include_directories(steamworks-sdk INTERFACE ${steamworks-sdk_SOURCE_DIR}/include)
@@ -126,7 +114,6 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 target_link_libraries(${PROJECT_NAME} PRIVATE
   mini
   spdlog
-  kiero
   imgui
   stb
   freetype

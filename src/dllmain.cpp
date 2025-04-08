@@ -63,10 +63,10 @@ static void enable_debug_logging(shared_ptr<spdlog::logger> logger) {
     logger->set_level(spdlog::level::trace);
 }
 
-bool WINAPI DllMain(HINSTANCE instance, unsigned int fdw_reason, void *reserved) {
+bool WINAPI DllMain(HINSTANCE instance, unsigned int reason, void *reserved) {
     static thread setup_thread;
 
-    if (fdw_reason == DLL_PROCESS_ATTACH) {
+    if (reason == DLL_PROCESS_ATTACH) {
         gg::config::set_handle(instance);
         auto logger = make_logger(gg::config::mod_folder / "logs" / "ergg.log");
         gg::config::load();
@@ -80,9 +80,6 @@ bool WINAPI DllMain(HINSTANCE instance, unsigned int fdw_reason, void *reserved)
                 modutils::initialize();
                 this_thread::sleep_for(chrono::seconds(2));
                 er::FD4::find_singletons();
-
-                // Hook into the DirectX 12 rendering, and add a
-                // callback to render the overlay UI using ImGui
                 gg::renderer::initialize(gg::gui::initialize_overlay, gg::gui::render_overlay);
             } catch (runtime_error &e) {
                 SPDLOG_ERROR("{}", e.what());
@@ -90,7 +87,7 @@ bool WINAPI DllMain(HINSTANCE instance, unsigned int fdw_reason, void *reserved)
         });
 
         return true;
-    } else if (fdw_reason == DLL_PROCESS_DETACH && reserved) {
+    } else if (reason == DLL_PROCESS_DETACH && reserved) {
         setup_thread.join();
         modutils::deinitialize();
         spdlog::shutdown();
