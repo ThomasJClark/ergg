@@ -88,8 +88,8 @@ void gg::gui::render_block_player(bool &is_open, const ImVec2 &window_pos, int p
         pos.y += ceilf((gg::gui::player_list_row_height - gg::gui::player_list_avatar_size.y) / 2);
         for (int i = 0; i < effective_player_count; i++) {
             auto &texture = number_key_textures[i];
-            ImGui::GetForegroundDrawList()->AddImage(texture->desc.second.ptr, pos, pos + size,
-                                                     {0.f, 0.f}, {1.f, 1.f}, color);
+            ImGui::GetForegroundDrawList()->AddImage(texture->id(), pos, pos + size, {0.f, 0.f},
+                                                     {1.f, 1.f}, color);
             pos.y += gg::gui::player_list_row_height;
         }
     }

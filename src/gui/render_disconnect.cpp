@@ -64,10 +64,9 @@ void gg::gui::render_disconnect(bool &is_open, const ImVec2 &windowpos, const Im
 
         auto padding = ImVec2{120.f, 24.f};
 
-        render_nine_slice(
-            ImGui::GetBackgroundDrawList(), background_texture->desc.second.ptr,
-            ImVec2{(float)background_texture->width, (float)background_texture->height} * scale,
-            pos - padding, size + padding * 2.f, {120.f, 0.f}, fade_in_out.alpha * .6f);
+        render_nine_slice(ImGui::GetBackgroundDrawList(), background_texture->id(),
+                          background_texture->size() * scale, pos - padding, size + padding * 2.f,
+                          {120.f, 0.f}, fade_in_out.alpha * .6f);
 
         ImGui::GetForegroundDrawList()->AddText(nullptr, 0.f, pos, ImGui::GetColorU32(text_color),
                                                 text_begin, text_end, wrap_width);

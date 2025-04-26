@@ -61,7 +61,7 @@ static void render_player_list_entry(const gg::player_list_entry &entry, int ind
                     2.f * gg::gui::scale);
             }
 
-            ImGui::Image(entry.steam_avatar->desc.second.ptr,
+            ImGui::Image(entry.steam_avatar->id(),
                          gg::gui::player_list_avatar_size * gg::gui::scale);
         }
     }
@@ -170,11 +170,8 @@ void gg::gui::render_player_list(ImVec2 pos, bool is_open) {
         auto padding = ImVec2{32, 28} * scale;
         auto pos = windowpos - padding;
         auto size = windowsize + padding * 2.f;
-        render_nine_slice(ImGui::GetBackgroundDrawList(),
-                          container_background_texture->desc.second.ptr,
-                          {(float)container_background_texture->width,
-                           (float)container_background_texture->height},
-                          pos, size, {56.f, 56.f}, .8f);
+        render_nine_slice(ImGui::GetBackgroundDrawList(), container_background_texture->id(),
+                          container_background_texture->size(), pos, size, {56.f, 56.f}, .8f);
     }
 
     // Draw a transprent texture behind each entry in the list
@@ -183,9 +180,8 @@ void gg::gui::render_player_list(ImVec2 pos, bool is_open) {
         auto pos = windowpos - padding;
         auto size = ImVec2{windowsize.x, player_list_row_height * scale} + padding * 2.f;
         for (int i = 0; i < player_count; i++) {
-            render_nine_slice(ImGui::GetBackgroundDrawList(), menu_fe_namebase->desc.second.ptr,
-                              {(float)menu_fe_namebase->width, (float)menu_fe_namebase->height},
-                              pos, size, {36.f, 0.f}, .8f);
+            render_nine_slice(ImGui::GetBackgroundDrawList(), menu_fe_namebase->id(),
+                              menu_fe_namebase->size(), pos, size, {36.f, 0.f}, .8f);
 
             pos.y += player_list_row_height * scale;
         }
@@ -199,11 +195,9 @@ void gg::gui::render_player_list(ImVec2 pos, bool is_open) {
         for (auto entry : player_list_entries) {
             if (entry.has_value()) {
                 if (entry->player && entry->player->game_data->hp == 0) {
-                    render_nine_slice(ImGui::GetForegroundDrawList(),
-                                      entry_background_texture->desc.second.ptr,
-                                      {(float)entry_background_texture->width / 2.f,
-                                       (float)entry_background_texture->height / 2.f},
-                                      pos, size, {8.5f, 11.f});
+                    render_nine_slice(
+                        ImGui::GetForegroundDrawList(), entry_background_texture->id(),
+                        entry_background_texture->size() / 2.f, pos, size, {8.5f, 11.f});
                 }
 
                 pos.y += player_list_row_height * scale;
