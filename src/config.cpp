@@ -1,10 +1,11 @@
 #include "config.hpp"
 
+#include <imgui.h>
 #include <mini/ini.h>
 #include <spdlog/spdlog.h>
 
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
+#include <algorithm>
+#include <unordered_map>
 
 using namespace std;
 namespace fs = std::filesystem;
@@ -22,10 +23,10 @@ bool gg::config::show_ping = true;
 unsigned int gg::config::high_ping = 100;
 bool gg::config::show_yourself = false;
 
-int gg::config::toggle_logs_key = VK_OEM_3;
-int gg::config::toggle_player_list_key = VK_F2;
-int gg::config::block_player_key = VK_F3;
-int gg::config::disconnect_key = VK_F4;
+ImGuiKey gg::config::toggle_logs_key = ImGuiKey_GraveAccent;
+ImGuiKey gg::config::toggle_player_list_key = ImGuiKey_F2;
+ImGuiKey gg::config::block_player_key = ImGuiKey_F3;
+ImGuiKey gg::config::disconnect_key = ImGuiKey_F4;
 
 bool gg::config::debug = false;
 
@@ -45,16 +46,61 @@ static void try_parse_boolean(mINI::INIMap<string> &config, const string &name, 
     }
 };
 
-static void try_parse_keycode(mINI::INIMap<string> &config, const string &name, int &out) {
+// clang-format off
+static unordered_map<string, ImGuiKey> keycodes_by_name = {{
+    {"tab", ImGuiKey_Tab}, {"leftarrow", ImGuiKey_LeftArrow}, {"rightarrow", ImGuiKey_RightArrow},
+    {"uparrow", ImGuiKey_UpArrow}, {"downarrow", ImGuiKey_DownArrow}, {"pageup", ImGuiKey_PageUp},
+    {"pagedown", ImGuiKey_PageDown}, {"home", ImGuiKey_Home}, {"end", ImGuiKey_End},
+    {"insert", ImGuiKey_Insert}, {"delete", ImGuiKey_Delete}, {"backspace", ImGuiKey_Backspace},
+    {"space", ImGuiKey_Space}, {"enter", ImGuiKey_Enter}, {"escape", ImGuiKey_Escape},
+    {"leftctrl", ImGuiKey_LeftCtrl}, {"leftshift", ImGuiKey_LeftShift},
+    {"leftalt", ImGuiKey_LeftAlt}, {"leftsuper", ImGuiKey_LeftSuper},
+    {"rightctrl", ImGuiKey_RightCtrl}, {"rightshift", ImGuiKey_RightShift},
+    {"rightalt", ImGuiKey_RightAlt}, {"rightsuper", ImGuiKey_RightSuper},
+    {"menu", ImGuiKey_Menu}, {"0", ImGuiKey_0}, {"1", ImGuiKey_1}, {"2", ImGuiKey_2},
+    {"3", ImGuiKey_3}, {"4", ImGuiKey_4}, {"5", ImGuiKey_5}, {"6", ImGuiKey_6}, {"7", ImGuiKey_7},
+    {"8", ImGuiKey_8}, {"9", ImGuiKey_9}, {"a", ImGuiKey_A}, {"b", ImGuiKey_B}, {"c", ImGuiKey_C},
+    {"d", ImGuiKey_D}, {"e", ImGuiKey_E}, {"f", ImGuiKey_F}, {"g", ImGuiKey_G}, {"h", ImGuiKey_H},
+    {"i", ImGuiKey_I}, {"j", ImGuiKey_J}, {"k", ImGuiKey_K}, {"l", ImGuiKey_L}, {"m", ImGuiKey_M},
+    {"n", ImGuiKey_N}, {"o", ImGuiKey_O}, {"p", ImGuiKey_P}, {"q", ImGuiKey_Q}, {"r", ImGuiKey_R},
+    {"s", ImGuiKey_S}, {"t", ImGuiKey_T}, {"u", ImGuiKey_U}, {"v", ImGuiKey_V}, {"w", ImGuiKey_W},
+    {"x", ImGuiKey_X}, {"y", ImGuiKey_Y}, {"z", ImGuiKey_Z}, {"f1", ImGuiKey_F1},
+    {"f2", ImGuiKey_F2}, {"f3", ImGuiKey_F3}, {"f4", ImGuiKey_F4}, {"f5", ImGuiKey_F5},
+    {"f6", ImGuiKey_F6}, {"f7", ImGuiKey_F7}, {"f8", ImGuiKey_F8}, {"f9", ImGuiKey_F9},
+    {"f10", ImGuiKey_F10}, {"f11", ImGuiKey_F11}, {"f12", ImGuiKey_F12}, {"f13", ImGuiKey_F13},
+    {"f14", ImGuiKey_F14}, {"f15", ImGuiKey_F15}, {"f16", ImGuiKey_F16}, {"f17", ImGuiKey_F17},
+    {"f18", ImGuiKey_F18}, {"f19", ImGuiKey_F19}, {"f20", ImGuiKey_F20}, {"f21", ImGuiKey_F21},
+    {"f22", ImGuiKey_F22}, {"f23", ImGuiKey_F23}, {"f24", ImGuiKey_F24},
+    {"apostrophe", ImGuiKey_Apostrophe}, {"comma", ImGuiKey_Comma}, {"minus", ImGuiKey_Minus},
+    {"period", ImGuiKey_Period}, {"slash", ImGuiKey_Slash}, {"semicolon", ImGuiKey_Semicolon},
+    {"equal", ImGuiKey_Equal}, {"leftbracket", ImGuiKey_LeftBracket},
+    {"backslash", ImGuiKey_Backslash}, {"rightbracket", ImGuiKey_RightBracket},
+    {"graveaccent", ImGuiKey_GraveAccent}, {"capslock", ImGuiKey_CapsLock},
+    {"scrolllock", ImGuiKey_ScrollLock}, {"numlock", ImGuiKey_NumLock},
+    {"printscreen", ImGuiKey_PrintScreen}, {"pause", ImGuiKey_Pause}, {"keypad0", ImGuiKey_Keypad0},
+    {"keypad1", ImGuiKey_Keypad1}, {"keypad2", ImGuiKey_Keypad2}, {"keypad3", ImGuiKey_Keypad3},
+    {"keypad4", ImGuiKey_Keypad4}, {"keypad5", ImGuiKey_Keypad5}, {"keypad6", ImGuiKey_Keypad6},
+    {"keypad7", ImGuiKey_Keypad7}, {"keypad8", ImGuiKey_Keypad8}, {"keypad9", ImGuiKey_Keypad9},
+    {"keypaddecimal", ImGuiKey_KeypadDecimal}, {"keypaddivide", ImGuiKey_KeypadDivide},
+    {"keypadmultiply", ImGuiKey_KeypadMultiply}, {"keypadsubtract", ImGuiKey_KeypadSubtract},
+    {"keypadadd", ImGuiKey_KeypadAdd}, {"keypadenter", ImGuiKey_KeypadEnter},
+    {"keypadequal", ImGuiKey_KeypadEqual}, {"appback", ImGuiKey_AppBack},
+    {"appforward", ImGuiKey_AppForward}, {"gamepadstart", ImGuiKey_GamepadStart},
+}};
+// clang-format on
+
+static void try_parse_keycode(mINI::INIMap<string> &config, const string &name, ImGuiKey &out) {
     if (!config.has(name)) {
         SPDLOG_WARN("Missing config \"{}\"", name);
         return;
     }
 
-    auto &value = config[name];
-    int parsed_value;
-    if (value.starts_with("0x") && (parsed_value = strtoul(value.data() + 2, nullptr, 16))) {
-        out = parsed_value;
+    auto value = config[name];
+    ranges::transform(value, value.begin(), ::tolower);
+
+    auto it = keycodes_by_name.find(value);
+    if (it != keycodes_by_name.end()) {
+        out = it->second;
     } else {
         SPDLOG_WARN("Invalid config value \"{} = {}\"", name, value);
     }
@@ -114,9 +160,9 @@ void gg::config::load() {
     SPDLOG_INFO("high_ping = {}", high_ping);
     SPDLOG_INFO("show_yourself = {}", show_yourself);
 
-    SPDLOG_INFO("toggle_player_list = 0x{:x}", toggle_player_list_key);
-    SPDLOG_INFO("block_player = 0x{:x}", block_player_key);
-    SPDLOG_INFO("disconnect = 0x{:x}", disconnect_key);
+    SPDLOG_INFO("toggle_player_list = 0x{:x}", (int)toggle_player_list_key);
+    SPDLOG_INFO("block_player = 0x{:x}", (int)block_player_key);
+    SPDLOG_INFO("disconnect = 0x{:x}", (int)disconnect_key);
 
     SPDLOG_INFO("debug = {}", debug);
 }

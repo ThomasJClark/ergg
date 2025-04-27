@@ -5,25 +5,26 @@
 
 using namespace std;
 
-static auto logs_ring_ptr = make_unique<array<gg::logs::log_entry, 50>>();
+static auto logs_ring_ptr = make_unique<array<string, 50>>();
 static size_t logs_begin = 0;
 static size_t logs_size = 0;
 
-gg::logs::log_entry &gg::logs::impl::insert() {
+size_t gg::logs::size() { return logs_size; }
+
+string &gg::logs::append() {
     auto &logs_ring = *logs_ring_ptr;
 
     if (logs_size == logs_ring.size()) {
         auto &oldest_entry = logs_ring[logs_begin];
         logs_begin = (logs_begin + 1) % logs_ring.size();
-        oldest_entry.~log_entry();
         return oldest_entry;
     }
     return logs_ring[logs_size++];
 }
 
-size_t gg::logs::size() { return logs_size; }
+void gg::logs::log(string &&message) { append() = move(message); }
 
-void gg::logs::for_each(function<void(const gg::logs::log_entry &)> callback) {
+void gg::logs::for_each(function<void(const string &)> callback) {
     auto &logs_ring = *logs_ring_ptr;
 
     auto limit = logs_begin + logs_size;

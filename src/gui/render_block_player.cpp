@@ -13,8 +13,6 @@
 
 #include <imgui.h>
 
-#include <windows.h>
-
 #include <array>
 #include <memory>
 
@@ -43,7 +41,7 @@ void gg::gui::render_block_player(bool &is_open, const ImVec2 &window_pos, int p
     }
 
     // Enter block mode when the configured key is pressed
-    if (GetAsyncKeyState(gg::config::block_player_key) & 1) {
+    if (ImGui::IsKeyPressed(gg::config::block_player_key)) {
         is_open = !is_open;
     }
 
@@ -55,7 +53,8 @@ void gg::gui::render_block_player(bool &is_open, const ImVec2 &window_pos, int p
                 continue;
             }
 
-            if ((GetAsyncKeyState('1' + slot) & 1) || (GetAsyncKeyState(VK_NUMPAD1 + slot) & 1)) {
+            if ((ImGui::IsKeyPressed(static_cast<ImGuiKey>(ImGuiKey_1 + slot))) ||
+                (ImGui::IsKeyPressed(static_cast<ImGuiKey>(ImGuiKey_Keypad1 + slot)))) {
                 if (entry->player && entry->player->session_holder.network_session) {
                     block_player(entry->player->session_holder.network_session->steam_id);
                 }

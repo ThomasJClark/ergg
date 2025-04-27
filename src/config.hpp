@@ -1,5 +1,7 @@
 #pragma once
 
+#include <imgui.h>
+
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
@@ -21,10 +23,10 @@ extern bool show_ping;
 extern unsigned int high_ping;
 extern bool show_yourself;
 
-extern int toggle_logs_key;
-extern int toggle_player_list_key;
-extern int block_player_key;
-extern int disconnect_key;
+extern ImGuiKey toggle_logs_key;
+extern ImGuiKey toggle_player_list_key;
+extern ImGuiKey block_player_key;
+extern ImGuiKey disconnect_key;
 
 extern bool debug;
 

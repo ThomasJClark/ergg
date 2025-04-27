@@ -123,11 +123,11 @@ void gg::gui::render_player_list(ImVec2 pos, bool is_open) {
 
     update_player_list();
 
-    auto player_count =
-        ranges::count_if(player_list_entries, [](auto entry) { return entry.has_value(); });
+    bool can_show_player_list =
+        ranges::any_of(player_list_entries, [](auto &entry) { return entry.has_value(); });
 
     // Skip rendering the overlay if there are no entries, so we don't ever show a blank rectangle
-    if (!fade_in_out.animate(player_count > 0 && is_open)) {
+    if (!fade_in_out.animate(can_show_player_list && is_open)) {
         is_block_player_open = false;
         is_disconnect_open = false;
         return;
@@ -151,11 +151,11 @@ void gg::gui::render_player_list(ImVec2 pos, bool is_open) {
     if (config::show_level) column_count++;
 
     ImGui::BeginTable("player_list_table", column_count);
-    int index = 0;
+    int player_count = 0;
     for (auto &entry : player_list_entries) {
         if (entry.has_value()) {
-            index++;
-            render_player_list_entry(entry.value(), index);
+            player_count++;
+            render_player_list_entry(entry.value(), player_count);
         }
     }
     ImGui::EndTable();

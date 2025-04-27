@@ -60,21 +60,23 @@ void gg::gui::render_overlay() {
 
     static bool is_player_list_open = true;
     static bool is_logs_open = false;
+    static bool player_list_priority = false;
 
-    if (GetAsyncKeyState(gg::config::toggle_player_list_key) & 1) {
-        is_player_list_open = !is_player_list_open;
+    auto show_player_list = is_player_list_open && (!is_logs_open || player_list_priority);
+    gg::gui::render_player_list(overlay_pos, show_player_list);
+    if (ImGui::IsKeyPressed(gg::config::toggle_player_list_key)) {
+        is_player_list_open = !show_player_list;
         if (is_player_list_open) {
-            is_logs_open = false;
+            player_list_priority = true;
         }
     }
 
-    if (GetAsyncKeyState(gg::config::toggle_logs_key) & 1) {
-        is_logs_open = !is_logs_open;
+    auto show_logs = is_logs_open && (!is_player_list_open || !player_list_priority);
+    gg::gui::render_logs(overlay_pos, show_logs);
+    if (ImGui::IsKeyPressed(gg::config::toggle_logs_key)) {
+        is_logs_open = !show_logs;
         if (is_logs_open) {
-            is_player_list_open = false;
+            player_list_priority = false;
         }
     }
-
-    gg::gui::render_player_list(overlay_pos, is_player_list_open);
-    gg::gui::render_logs(overlay_pos, is_logs_open);
 }

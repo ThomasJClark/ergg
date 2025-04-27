@@ -32,9 +32,7 @@ public:
         : formatter(make_unique<spdlog::pattern_formatter>("%v")) {}
 
     virtual void log(const spdlog::details::log_msg &msg) {
-        string str;
-        formatter->format(msg, str);
-        gg::logs::log(move(str));
+        formatter->format(msg, gg::logs::append());
     }
 
     virtual void flush() {}

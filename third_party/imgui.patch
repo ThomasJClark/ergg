@@ -56,3 +56,20 @@ index 8f8bc3b9..b5a86047 100644
  
  //---- Use 32-bit vertex indices (default is 16-bit) is one way to allow large meshes with more than 64K vertices.
  // Your renderer backend will need to support it (most example renderer backends support both 16/32-bit indices).
+diff --git a/imgui.cpp b/imgui.cpp
+index 26e56b80..2f77ec52 100644
+--- a/imgui.cpp
++++ b/imgui.cpp
+@@ -4626,12 +4626,6 @@ bool ImGui::ItemHoverable(const ImRect& bb, ImGuiID id, ImGuiItemFlags item_flag
+             if (g.HoveredIdPreviousFrame != id)
+                 return false;
+         }
+-
+-        // Display shortcut (only works with mouse)
+-        // (ImGuiItemStatusFlags_HasShortcut in LastItemData denotes we want a tooltip)
+-        if (id == g.LastItemData.ID && (g.LastItemData.StatusFlags & ImGuiItemStatusFlags_HasShortcut) && g.ActiveId != id)
+-            if (IsItemHovered(ImGuiHoveredFlags_ForTooltip | ImGuiHoveredFlags_DelayNormal))
+-                SetTooltip("%s", GetKeyChordName(g.LastItemData.Shortcut));
+     }
+ 
+     // When disabled we'll return false but still set HoveredId

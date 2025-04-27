@@ -6,26 +6,17 @@
 namespace gg {
 namespace logs {
 
-struct log_entry {
-    std::string message;
-};
-
-namespace impl {
-log_entry &insert();
-}
+size_t size();
 
 /**
  * Append a new log message to the ring buffer, overwriting the oldest message if the buffer is
  * full
  */
-template <class... A>
-inline void log(A &&...args) {
-    new (&impl::insert()) log_entry(std::forward<A>(args)...);
-}
+std::string &append();
 
-size_t size();
+void log(std::string &&message);
 
-void for_each(std::function<void(const log_entry &)> callback);
+void for_each(std::function<void(const std::string &)> callback);
 
 }
 }

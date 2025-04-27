@@ -1,5 +1,3 @@
-#define WIN32_LEAN_AND_MEAN
-
 #include "render_disconnect.hpp"
 #include "styles.hpp"
 #include "utils.hpp"
@@ -9,7 +7,6 @@
 
 #include <imgui.h>
 #include <spdlog/spdlog.h>
-#include <windows.h>
 #include <elden-x/session.hpp>
 
 #include <memory>
@@ -26,7 +23,7 @@ void gg::gui::initialize_disconnect() {
 }
 
 void gg::gui::render_disconnect(bool &is_open, const ImVec2 &windowpos, const ImVec2 &windowsize) {
-    if (GetAsyncKeyState(gg::config::disconnect_key) & 1) {
+    if (ImGui::IsKeyPressed(gg::config::disconnect_key)) {
         // Require a second press to confirm, to prevent accidental disconnects
         if (is_open) {
             SPDLOG_INFO("Disconnecting from online session");
@@ -44,7 +41,7 @@ void gg::gui::render_disconnect(bool &is_open, const ImVec2 &windowpos, const Im
         is_open = !is_open;
     }
 
-    if (is_open && GetAsyncKeyState(VK_ESCAPE) & 1) {
+    if (is_open && ImGui::IsKeyPressed(ImGuiKey_Escape)) {
         is_open = false;
     }
 
