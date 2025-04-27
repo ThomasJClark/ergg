@@ -44,9 +44,10 @@ FetchContent_Declare(steamworks-sdk
   CONFIGURE_COMMAND     ""
   BUILD_COMMAND         "")
 
+set(ER_WITH_HOOKS ON)
 FetchContent_Declare(elden-x
   GIT_REPOSITORY        https://github.com/ThomasJClark/elden-x.git
-  GIT_TAG               0de658007d6f4563cc1cee03b9d04c399cf69146)
+  GIT_TAG               02e2d0455808db298e3a31c4f9ba89b50b5037f3)
 
 add_definitions(-D_ITERATOR_DEBUG_LEVEL=0)
 
