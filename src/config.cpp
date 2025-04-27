@@ -15,7 +15,6 @@ fs::path gg::config::mod_folder;
 
 bool gg::config::show_in_game_name = true;
 bool gg::config::show_level = true;
-bool gg::config::show_invaders = true;
 bool gg::config::show_steam_name = true;
 bool gg::config::show_steam_avatar = true;
 bool gg::config::show_steam_relationship = true;
@@ -83,7 +82,6 @@ void gg::config::load() {
     auto &overlay = ini["overlay"];
     try_parse_boolean(overlay, "show_in_game_name", show_in_game_name);
     try_parse_boolean(overlay, "show_level", show_level);
-    try_parse_boolean(overlay, "show_invaders", show_invaders);
     try_parse_boolean(overlay, "show_steam_name", show_steam_name);
     try_parse_boolean(overlay, "show_steam_avatar", show_steam_avatar);
     try_parse_boolean(overlay, "show_steam_relationship", show_steam_relationship);
@@ -109,7 +107,6 @@ void gg::config::load() {
 
     SPDLOG_INFO("show_in_game_name = {}", show_in_game_name);
     SPDLOG_INFO("show_level = {}", show_level);
-    SPDLOG_INFO("show_invaders = {}", show_invaders);
     SPDLOG_INFO("show_steam_name = {}", show_steam_name);
     SPDLOG_INFO("show_steam_avatar = {}", show_steam_avatar);
     SPDLOG_INFO("show_steam_relationship = {}", show_steam_relationship);

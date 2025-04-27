@@ -14,7 +14,6 @@ extern std::filesystem::path mod_folder;
 
 extern bool show_in_game_name;
 extern bool show_level;
-extern bool show_invaders;
 extern bool show_steam_name;
 extern bool show_steam_avatar;
 extern bool show_steam_relationship;
