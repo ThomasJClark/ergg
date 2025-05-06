@@ -8,6 +8,7 @@
 #include <backends/imgui_impl_win32.h>
 #include <imgui.h>
 
+#include <kiero.h>
 #include <spdlog/spdlog.h>
 
 #include <chrono>
@@ -36,13 +37,6 @@ private:
     bool initialized{false};
 
     /**
-     * True if the window was resized on the previous frame. In the FrameBegin step, the render
-     * targets will be re-allocated.
-     */
-    bool resized{false};
-    pair<int, int> prev_window_size;
-
-    /**
      * Callback to overlay rendering methods passed from dllmain
      */
     function<void()> initialize_callback;
@@ -62,6 +56,7 @@ private:
     ID3D12GraphicsCommandList *command_list{nullptr};
     ID3D12DescriptorHeap *srv_descriptor_heap{nullptr};
 
+public:
     void release_render_targets() {
         for (auto &frame : render_targets) {
             frame.resource->Release();
@@ -184,14 +179,16 @@ private:
         initialized = true;
     }
 
-    void frame_begin() {
-        if (resized) {
-            resized = false;
-            setup_render_targets();
-        }
-    }
+public:
+    render_task() {}
 
-    void draw_step() {
+    render_task(function<void()> initialize_callback, function<void()> render_callback)
+        : initialize_callback(initialize_callback),
+          render_callback(render_callback) {}
+
+    virtual void execute(er::FD4::task_data *data,
+                         er::FD4::task_group group,
+                         er::FD4::task_affinity affinity) override {
         auto gxglobals = er::GXBS::globals::instance();
         auto command_queue = gxglobals->get_command_queue();
         auto swap_chain = gxglobals->get_swap_chain();
@@ -237,38 +234,6 @@ private:
         command_queue->ExecuteCommandLists(
             1, reinterpret_cast<ID3D12CommandList *const *>(&command_list));
     }
-
-    void frame_end() {
-        auto window = er::CS::CSWindow::instance();
-        if (window && initialized && window->window_size != prev_window_size) {
-            resized = true;
-            release_render_targets();
-        }
-        prev_window_size = window->window_size;
-    }
-
-public:
-    render_task(function<void()> initialize_callback, function<void()> render_callback)
-        : initialize_callback(initialize_callback),
-          render_callback(render_callback) {}
-
-    virtual void execute(er::FD4::task_data *data,
-                         er::FD4::task_group group,
-                         er::FD4::task_affinity affinity) override {
-        switch (group) {
-            case er::FD4::task_group::FrameBegin:
-                frame_begin();
-                break;
-
-            case er::FD4::task_group::DrawStep:
-                draw_step();
-                break;
-
-            case er::FD4::task_group::FrameEnd:
-                frame_end();
-                break;
-        }
-    }
 };
 
 /**
@@ -285,6 +250,29 @@ static LRESULT wndproc_hook(HWND hwnd, unsigned int msg, WPARAM wparam, LPARAM l
     }
 
     return CallWindowProc(wndproc, hwnd, msg, wparam, lparam);
+}
+
+static render_task task;
+
+/**
+ * Hook for IDXGISwapChain::ResizeBuffers()
+ *
+ * Resizes our overlay render targets when the game window is resized
+ *
+ * https://learn.microsoft.com/en-us/windows/win32/api/dxgi/nf-dxgi-idxgiswapchain-resizebuffers
+ */
+static HRESULT(APIENTRY *swap_chain_resize_buffers)(
+    IDXGISwapChain3 *, unsigned int, unsigned int, unsigned int, DXGI_FORMAT, unsigned int);
+static HRESULT swap_chain_resize_buffers_hook(IDXGISwapChain3 *_this,
+                                              unsigned int buffer_count,
+                                              unsigned int width,
+                                              unsigned int height,
+                                              DXGI_FORMAT new_format,
+                                              unsigned int flags) {
+    task.release_render_targets();
+    auto hr = swap_chain_resize_buffers(_this, buffer_count, width, height, new_format, flags);
+    task.setup_render_targets();
+    return hr;
 }
 
 gg::renderer::impl::descriptor_pair gg::renderer::impl::alloc_descriptor() {
@@ -304,11 +292,10 @@ void gg::renderer::initialize(function<void()> initialize_callback,
     auto hwnd = er::CS::CSWindow::instance()->hwnd;
     wndproc = (WNDPROC)SetWindowLongPtrW(hwnd, GWLP_WNDPROC, (LONG_PTR)wndproc_hook);
 
-    // Register a task to draw the overlay. This could also be done in the DX12 hook, but that
-    // tends not to play nicely with capture software and other overlays.
-    static auto task = render_task{initialize_callback, render_callback};
-    auto task_man = er::CS::CSTask::instance();
-    task_man->register_task(er::FD4::task_group::FrameBegin, task);
-    task_man->register_task(er::FD4::task_group::DrawStep, task);
-    task_man->register_task(er::FD4::task_group::FrameEnd, task);
+    task = render_task{initialize_callback, render_callback};
+    er::CS::CSTask::instance()->register_task(er::FD4::task_group::DrawBegin, task);
+
+    kiero::init(kiero::RenderType::D3D12);
+    kiero::bind(145, (void **)&swap_chain_resize_buffers, swap_chain_resize_buffers_hook);
+    kiero::shutdown();
 }

@@ -44,12 +44,19 @@ FetchContent_Declare(steamworks-sdk
   CONFIGURE_COMMAND     ""
   BUILD_COMMAND         "")
 
-set(ER_WITH_HOOKS OFF)
 FetchContent_Declare(elden-x
   GIT_REPOSITORY        https://github.com/ThomasJClark/elden-x.git
-  GIT_TAG               02e2d0455808db298e3a31c4f9ba89b50b5037f3)
+  GIT_TAG               3fa1e0d4ae94f2ce7c87f4b700823f363f0251e7)
 
 add_definitions(-D_ITERATOR_DEBUG_LEVEL=0)
+
+FetchContent_Declare(kiero
+  GIT_REPOSITORY        https://github.com/Rebzzel/kiero
+  GIT_TAG               1.2.12
+  CONFIGURE_COMMAND     ""
+  BUILD_COMMAND         ""
+  PATCH_COMMAND         git apply ${CMAKE_CURRENT_SOURCE_DIR}/third_party/kiero.patch
+  UPDATE_DISCONNECTED   1)
 
 FetchContent_MakeAvailable(
   mini
@@ -58,10 +65,14 @@ FetchContent_MakeAvailable(
   stb
   freetype
   steamworks-sdk
-  elden-x)
+  elden-x
+  kiero)
 
 add_library(mini INTERFACE)
 target_include_directories(mini INTERFACE ${mini_SOURCE_DIR}/src)
+
+add_library(kiero ${kiero_SOURCE_DIR}/kiero.cpp)
+target_include_directories(kiero INTERFACE ${kiero_SOURCE_DIR})
 
 add_library(imgui
 	${imgui_SOURCE_DIR}/imgui.cpp
@@ -123,4 +134,5 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
   steamworks-sdk
   elden-x
   d3d12.lib
-  dxgi.lib)
+  dxgi.lib
+  kiero)
