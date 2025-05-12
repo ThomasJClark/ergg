@@ -76,9 +76,11 @@ bool WINAPI DllMain(HINSTANCE instance, unsigned int reason, void *reserved) {
         setup_thread = thread([]() {
             try {
                 modutils::initialize();
-                this_thread::sleep_for(chrono::seconds(2));
-                er::FD4::find_singletons();
-                gg::renderer::initialize(gg::gui::initialize_overlay, gg::gui::render_overlay);
+                if (!modutils::sus) {
+                    this_thread::sleep_for(chrono::seconds(2));
+                    er::FD4::find_singletons();
+                    gg::renderer::initialize(gg::gui::initialize_overlay, gg::gui::render_overlay);
+                }
             } catch (runtime_error &e) {
                 SPDLOG_ERROR("{}", e.what());
             }
