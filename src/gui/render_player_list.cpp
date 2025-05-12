@@ -127,7 +127,7 @@ void gg::gui::render_player_list(ImVec2 pos, bool is_open) {
         ranges::any_of(player_list_entries, [](auto &entry) { return entry.has_value(); });
 
     // Skip rendering the overlay if there are no entries, so we don't ever show a blank rectangle
-    if (!fade_in_out.animate(can_show_player_list && is_open)) {
+    if (!fade_in_out.animate(can_show_player_list && is_open) || !can_show_player_list) {
         is_block_player_open = false;
         is_disconnect_open = false;
         return;

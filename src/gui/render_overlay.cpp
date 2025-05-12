@@ -44,8 +44,8 @@ static void load_font() {
 void gg::gui::initialize_overlay() {
     ImGui::GetStyle().WindowBorderSize = 0;
     load_font();
-    gg::gui::initialize_player_list();
-    gg::gui::initialize_logs();
+    initialize_player_list();
+    initialize_logs();
 }
 
 void gg::gui::render_overlay() {
