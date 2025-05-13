@@ -8,7 +8,6 @@
 #include <backends/imgui_impl_win32.h>
 #include <imgui.h>
 
-#include <kiero.h>
 #include <spdlog/spdlog.h>
 
 #include <chrono>
@@ -261,9 +260,9 @@ static render_task task;
  *
  * https://learn.microsoft.com/en-us/windows/win32/api/dxgi/nf-dxgi-idxgiswapchain-resizebuffers
  */
-static HRESULT(APIENTRY *swap_chain_resize_buffers)(
-    IDXGISwapChain3 *, unsigned int, unsigned int, unsigned int, DXGI_FORMAT, unsigned int);
-static HRESULT swap_chain_resize_buffers_hook(IDXGISwapChain3 *_this,
+static HRESULT (*swap_chain_resize_buffers)(
+    IDXGISwapChain *, unsigned int, unsigned int, unsigned int, DXGI_FORMAT, unsigned int);
+static HRESULT swap_chain_resize_buffers_hook(IDXGISwapChain *_this,
                                               unsigned int buffer_count,
                                               unsigned int width,
                                               unsigned int height,
@@ -295,7 +294,18 @@ void gg::renderer::initialize(function<void()> initialize_callback,
     task = render_task{initialize_callback, render_callback};
     er::CS::CSTask::instance()->register_task(er::FD4::task_group::DrawBegin, task);
 
-    kiero::init(kiero::RenderType::D3D12);
-    kiero::bind(145, (void **)&swap_chain_resize_buffers, swap_chain_resize_buffers_hook);
-    kiero::shutdown();
+    auto swap_chain_vftable =
+        *reinterpret_cast<uintptr_t **>(er::GXBS::globals::instance()->get_swap_chain());
+    auto &swap_chain_resize_buffers_original =
+        reinterpret_cast<decltype(swap_chain_resize_buffers) &>(swap_chain_vftable[13]);
+
+    unsigned long old_protect;
+    VirtualProtect(&swap_chain_resize_buffers_original, sizeof(swap_chain_resize_buffers_original),
+                   PAGE_EXECUTE_READWRITE, &old_protect);
+
+    swap_chain_resize_buffers = swap_chain_resize_buffers_original;
+    swap_chain_resize_buffers_original = &swap_chain_resize_buffers_hook;
+
+    VirtualProtect(&swap_chain_resize_buffers_original, sizeof(swap_chain_resize_buffers_original),
+                   old_protect, &old_protect);
 }
