@@ -56,8 +56,7 @@ void gg::initialize_fake_block() {
         in_stream.close();
 
         if (!blocked_players.empty()) {
-            SPDLOG_INFO("Loaded {} blocked players from {}", blocked_players.size(),
-                        file_path.string());
+            SPDLOG_INFO("Loaded {} blocked players", blocked_players.size());
         }
     }
 

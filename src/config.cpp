@@ -116,7 +116,7 @@ void gg::config::set_handle(HINSTANCE mod_handle) {
 
 void gg::config::load() {
     auto ini_path = mod_folder / "ergg.ini";
-    SPDLOG_INFO("Loading config from {}", ini_path.string());
+    SPDLOG_DEBUG("Loading config from {}", ini_path.string());
 
     auto file = mINI::INIFile{ini_path.string()};
     auto ini = mINI::INIStructure{};
@@ -149,22 +149,22 @@ void gg::config::load() {
     auto &misc = ini["misc"];
     try_parse_boolean(misc, "debug", debug);
 
-    SPDLOG_INFO("mod_folder = {}", mod_folder.string());
+    SPDLOG_DEBUG("mod_folder = {}", mod_folder.string());
 
-    SPDLOG_INFO("show_in_game_name = {}", show_in_game_name);
-    SPDLOG_INFO("show_level = {}", show_level);
-    SPDLOG_INFO("show_steam_name = {}", show_steam_name);
-    SPDLOG_INFO("show_steam_avatar = {}", show_steam_avatar);
-    SPDLOG_INFO("show_steam_relationship = {}", show_steam_relationship);
-    SPDLOG_INFO("show_ping = {}", show_ping);
-    SPDLOG_INFO("high_ping = {}", high_ping);
-    SPDLOG_INFO("show_yourself = {}", show_yourself);
+    SPDLOG_DEBUG("show_in_game_name = {}", show_in_game_name);
+    SPDLOG_DEBUG("show_level = {}", show_level);
+    SPDLOG_DEBUG("show_steam_name = {}", show_steam_name);
+    SPDLOG_DEBUG("show_steam_avatar = {}", show_steam_avatar);
+    SPDLOG_DEBUG("show_steam_relationship = {}", show_steam_relationship);
+    SPDLOG_DEBUG("show_ping = {}", show_ping);
+    SPDLOG_DEBUG("high_ping = {}", high_ping);
+    SPDLOG_DEBUG("show_yourself = {}", show_yourself);
 
-    SPDLOG_INFO("toggle_player_list = 0x{:x}", (int)toggle_player_list_key);
-    SPDLOG_INFO("block_player = 0x{:x}", (int)block_player_key);
-    SPDLOG_INFO("disconnect = 0x{:x}", (int)disconnect_key);
+    SPDLOG_DEBUG("toggle_player_list = 0x{:x}", (int)toggle_player_list_key);
+    SPDLOG_DEBUG("block_player = 0x{:x}", (int)block_player_key);
+    SPDLOG_DEBUG("disconnect = 0x{:x}", (int)disconnect_key);
 
-    SPDLOG_INFO("debug = {}", debug);
+    SPDLOG_DEBUG("debug = {}", debug);
 }
 
 optional<span<unsigned char>> gg::config::get_resource(string name, string type) {

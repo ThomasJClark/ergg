@@ -1,12 +1,12 @@
-#include "player_list.hpp"
-
-#include "config.hpp"
-
 #include <steam/isteamfriends.h>
 #include <steam/isteamnetworkingmessages.h>
 #include <steam/isteamuser.h>
 #include <steam/isteamutils.h>
 #include <steam/steamclientpublic.h>
+
+#include "player_list.hpp"
+
+#include "config.hpp"
 
 #include <elden-x/chr/world_chr_man.hpp>
 #include <elden-x/now_loading_helper.hpp>
@@ -90,6 +90,7 @@ void gg::update_player_list() {
         if (player && player->session_holder.network_session &&
             (gg::config::show_yourself || player != world_chr_man->main_player)) {
             auto steam_id = player->session_holder.network_session->steam_id;
+            bool just_connected = false;
 
             // If this slot was previously empty or had a different player, construct a new
             // entry for this player
@@ -104,6 +105,8 @@ void gg::update_player_list() {
                 if (gg::config::show_in_game_name) {
                     entry->in_game_name = utf16_convert.to_bytes(player->game_data->name_c_str);
                 }
+
+                just_connected = true;
             }
 
             if (gg::config::show_steam_name) {
@@ -131,6 +134,24 @@ void gg::update_player_list() {
             if (gg::config::show_steam_relationship) {
                 entry->steam_relationship = SteamFriends()->GetFriendRelationship(steam_id);
             }
+
+            if (just_connected) {
+                auto has_steam_name = !entry->steam_name.empty();
+                auto has_in_game_name = !entry->in_game_name.empty();
+                if (has_steam_name && has_in_game_name) {
+                    SPDLOG_INFO("Connected to {} ({}) - {}", entry->in_game_name, entry->steam_name,
+                                steam_id.ConvertToUint64());
+                } else if (has_steam_name) {
+                    SPDLOG_INFO("Connected to {} - {}", entry->steam_name,
+                                steam_id.ConvertToUint64());
+                } else if (has_in_game_name) {
+                    SPDLOG_INFO("Connected to {} - {}", entry->in_game_name,
+                                steam_id.ConvertToUint64());
+                } else {
+                    SPDLOG_INFO("Connected to {}", steam_id.ConvertToUint64());
+                }
+            }
+
         } else {
             entry.reset();
         }

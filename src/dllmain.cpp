@@ -32,7 +32,9 @@ public:
         : formatter(make_unique<spdlog::pattern_formatter>("%v")) {}
 
     virtual void log(const spdlog::details::log_msg &msg) {
-        formatter->format(msg, gg::logs::append());
+        if (msg.level >= spdlog::level::info) {
+            formatter->format(msg, gg::logs::append());
+        }
     }
 
     virtual void flush() {}
@@ -80,6 +82,7 @@ bool WINAPI DllMain(HINSTANCE instance, unsigned int reason, void *reserved) {
                     this_thread::sleep_for(chrono::seconds(2));
                     er::FD4::find_singletons();
                     gg::renderer::initialize(gg::gui::initialize_overlay, gg::gui::render_overlay);
+                    SPDLOG_INFO("Initialized mod");
                 }
             } catch (runtime_error &e) {
                 SPDLOG_ERROR("{}", e.what());

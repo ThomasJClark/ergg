@@ -24,9 +24,6 @@ struct player_list_entry {
     EFriendRelationship steam_relationship{k_EFriendRelationshipNone};
     int steam_ping{-1};
     int steam_ping_cumulative_error{0};
-
-    float connection_quality_local{-1.f};
-    float connection_quality_remote{-1.f};
 };
 
 /**
