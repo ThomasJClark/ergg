@@ -294,18 +294,18 @@ void gg::renderer::initialize(function<void()> initialize_callback,
     task = render_task{initialize_callback, render_callback};
     er::CS::CSTask::instance()->register_task(er::FD4::task_group::DrawBegin, task);
 
-    auto swap_chain_vftable =
-        *reinterpret_cast<uintptr_t **>(er::GXBS::globals::instance()->get_swap_chain());
-    auto &swap_chain_resize_buffers_original =
-        reinterpret_cast<decltype(swap_chain_resize_buffers) &>(swap_chain_vftable[13]);
+    struct swap_chain_vftable_type {
+        void *unk[13];
+        decltype(swap_chain_resize_buffers) resize_buffers;
+    };
+
+    auto swap_chain = er::GXBS::globals::instance()->get_swap_chain();
+    auto &resize_buffers =
+        (*reinterpret_cast<swap_chain_vftable_type **>(swap_chain))->resize_buffers;
 
     unsigned long old_protect;
-    VirtualProtect(&swap_chain_resize_buffers_original, sizeof(swap_chain_resize_buffers_original),
-                   PAGE_EXECUTE_READWRITE, &old_protect);
-
-    swap_chain_resize_buffers = swap_chain_resize_buffers_original;
-    swap_chain_resize_buffers_original = &swap_chain_resize_buffers_hook;
-
-    VirtualProtect(&swap_chain_resize_buffers_original, sizeof(swap_chain_resize_buffers_original),
-                   old_protect, &old_protect);
+    VirtualProtect(&resize_buffers, sizeof(resize_buffers), PAGE_EXECUTE_READWRITE, &old_protect);
+    swap_chain_resize_buffers = resize_buffers;
+    resize_buffers = &swap_chain_resize_buffers_hook;
+    VirtualProtect(&resize_buffers, sizeof(resize_buffers), old_protect, &old_protect);
 }

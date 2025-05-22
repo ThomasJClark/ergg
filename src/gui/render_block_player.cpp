@@ -18,6 +18,8 @@
 
 using namespace std;
 
+static string text = "Press a number to block, or ESC to cancel";
+
 static const auto number_key_files =
     array{"KG_Key_1", "KG_Key_2", "KG_Key_3", "KG_Key_4", "KG_Key_5",
           "KG_Key_6", "KG_Key_7", "KG_Key_8", "KG_Key_9"};
@@ -32,7 +34,10 @@ void gg::gui::initialize_block_player() {
     initialize_fake_block();
 }
 
-void gg::gui::render_block_player(bool &is_open, const ImVec2 &window_pos, int player_count) {
+void gg::gui::render_block_player(bool &is_open,
+                                  const ImVec2 &windowpos,
+                                  const ImVec2 &windowsize,
+                                  int player_count) {
     static int last_player_count = 0;
 
     int effective_player_count = player_count;
@@ -82,7 +87,7 @@ void gg::gui::render_block_player(bool &is_open, const ImVec2 &window_pos, int p
     if (fade_in_out.animate(is_open)) {
         auto color = ImGui::ColorConvertFloat4ToU32({1.f, 1.f, 1.f, fade_in_out.alpha});
         auto size = gg::gui::player_list_avatar_size;
-        auto pos = window_pos;
+        auto pos = windowpos;
         pos.x -= size.x + 8.f;
         pos.y += ceilf((gg::gui::player_list_row_height - gg::gui::player_list_avatar_size.y) / 2);
         for (int i = 0; i < effective_player_count; i++) {
@@ -91,5 +96,7 @@ void gg::gui::render_block_player(bool &is_open, const ImVec2 &window_pos, int p
                                                      {1.f, 1.f}, color);
             pos.y += gg::gui::player_list_row_height;
         }
+
+        render_player_list_action_text(windowpos, windowsize, text, fade_in_out.alpha);
     }
 }

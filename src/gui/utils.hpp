@@ -3,6 +3,7 @@
 #include <imgui.h>
 
 #include <algorithm>
+#include <string>
 
 namespace gg {
 namespace gui {
@@ -31,8 +32,12 @@ void render_nine_slice(ImDrawList *drawlist,
                        ImVec2 pos,
                        ImVec2 size,
                        ImVec2 padding,
-                       float opacity = 1.f,
-                       bool debug = false);
+                       float opacity = 1.f);
+
+void render_player_list_action_text(const ImVec2 &windowpos,
+                                    const ImVec2 &windowsize,
+                                    const std::string &text,
+                                    float opacity = 1.f);
 
 }
 }

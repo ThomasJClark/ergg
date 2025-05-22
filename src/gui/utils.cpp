@@ -1,4 +1,5 @@
 #include "utils.hpp"
+#include "../renderer/texture.hpp"
 #include "styles.hpp"
 
 #include <array>
@@ -11,8 +12,7 @@ void gg::gui::render_nine_slice(ImDrawList *drawlist,
                                 ImVec2 pos,
                                 ImVec2 size,
                                 ImVec2 padding,
-                                float opacity,
-                                bool debug) {
+                                float opacity) {
     texture_size *= scale;
     padding *= scale;
 
@@ -46,9 +46,35 @@ void gg::gui::render_nine_slice(ImDrawList *drawlist,
                                {uvs[i + 1].x, uvs[j + 1].y}, color);
         }
     }
+}
 
-    if (debug) {
-        drawlist->AddRect(verts[0], verts[3], ImGui::GetColorU32(blue));
-        drawlist->AddRect(verts[1], verts[2], ImGui::GetColorU32(gold));
+void gg::gui::render_player_list_action_text(const ImVec2 &windowpos,
+                                             const ImVec2 &windowsize,
+                                             const string &text,
+                                             float opacity) {
+    static shared_ptr<gg::renderer::texture> background_texture;
+    if (!background_texture) {
+        background_texture = gg::renderer::load_texture_from_resource("MENU_FE_Warning");
     }
+
+    auto pos = windowpos;
+    pos.y += windowsize.y + 24.f;
+
+    auto text_color = white;
+    text_color.w = opacity;
+
+    auto text_begin = text.data();
+    auto text_end = text.data() + text.size();
+    auto wrap_width = windowsize.x;
+
+    auto size = ImGui::CalcTextSize(text_begin, text_end, false, wrap_width);
+
+    auto padding = ImVec2{120.f, 24.f};
+
+    render_nine_slice(ImGui::GetBackgroundDrawList(), background_texture->id(),
+                      background_texture->size() * scale, pos - padding, size + padding * 2.f,
+                      {120.f, 0.f}, opacity * .6f);
+
+    ImGui::GetForegroundDrawList()->AddText(nullptr, 0.f, pos, ImGui::GetColorU32(text_color),
+                                            text_begin, text_end, wrap_width);
 }

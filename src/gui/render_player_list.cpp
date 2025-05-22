@@ -113,7 +113,6 @@ void gg::gui::initialize_player_list() {
     menu_fe_namebase = renderer::load_texture_from_resource("MENU_FE_NameBase");
 
     initialize_block_player();
-    initialize_disconnect();
 }
 
 void gg::gui::render_player_list(ImVec2 pos, bool is_open) {
@@ -205,7 +204,7 @@ void gg::gui::render_player_list(ImVec2 pos, bool is_open) {
         }
     }
 
-    render_block_player(is_block_player_open, windowpos, player_count);
+    render_block_player(is_block_player_open, windowpos, windowsize, player_count);
     render_disconnect(is_disconnect_open, windowpos, windowsize);
 
     ImGui::PopStyleVar(ImGuiStyleVar_WindowBorderSize);

@@ -14,13 +14,7 @@
 
 using namespace std;
 
-static string prompt = "Press again to disconnect, or ESC to cancel";
-
-shared_ptr<gg::renderer::texture> background_texture;
-
-void gg::gui::initialize_disconnect() {
-    background_texture = gg::renderer::load_texture_from_resource("MENU_FE_Warning");
-}
+static string text = "Press again to disconnect, or ESC to cancel";
 
 void gg::gui::render_disconnect(bool &is_open, const ImVec2 &windowpos, const ImVec2 &windowsize) {
     if (ImGui::IsKeyPressed(gg::config::disconnect_key)) {
@@ -47,25 +41,6 @@ void gg::gui::render_disconnect(bool &is_open, const ImVec2 &windowpos, const Im
 
     static fade_in_out fade_in_out;
     if (fade_in_out.animate(is_open)) {
-        auto pos = windowpos;
-        pos.y += windowsize.y + 24.f;
-
-        auto text_color = white;
-        text_color.w = fade_in_out.alpha;
-
-        auto text_begin = prompt.data();
-        auto text_end = prompt.data() + prompt.size();
-        auto wrap_width = windowsize.x;
-
-        auto size = ImGui::CalcTextSize(text_begin, text_end, false, wrap_width);
-
-        auto padding = ImVec2{120.f, 24.f};
-
-        render_nine_slice(ImGui::GetBackgroundDrawList(), background_texture->id(),
-                          background_texture->size() * scale, pos - padding, size + padding * 2.f,
-                          {120.f, 0.f}, fade_in_out.alpha * .6f);
-
-        ImGui::GetForegroundDrawList()->AddText(nullptr, 0.f, pos, ImGui::GetColorU32(text_color),
-                                                text_begin, text_end, wrap_width);
+        render_player_list_action_text(windowpos, windowsize, text, fade_in_out.alpha);
     }
 }
