@@ -10,6 +10,8 @@
 #include "../player_list.hpp"
 #include "../renderer/texture.hpp"
 
+#include <elden-x/fe.hpp>
+
 #include <imgui.h>
 
 #include <algorithm>
@@ -124,6 +126,13 @@ void gg::gui::render_player_list(ImVec2 pos, bool is_open) {
 
     bool can_show_player_list =
         ranges::any_of(player_list_entries, [](auto &entry) { return entry.has_value(); });
+
+    // Hide the player list when the HP/FP/SP bars are hidden, since this means another menu
+    // (e.g. the map or equipment screen) is open
+    auto feman = er::CS::CSFeMan::instance();
+    if (!feman || !feman->state.show_player_status) {
+        can_show_player_list = false;
+    }
 
     // Skip rendering the overlay if there are no entries, so we don't ever show a blank rectangle
     if (!fade_in_out.animate(can_show_player_list && is_open) || !can_show_player_list) {
