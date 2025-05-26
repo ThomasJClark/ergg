@@ -20,6 +20,7 @@ struct player_list_entry {
     er::CS::PlayerIns *player{nullptr};
     std::string in_game_name;
     std::string steam_name;
+    std::string debug_name;
     std::shared_ptr<gg::renderer::texture> steam_avatar;
     EFriendRelationship steam_relationship{k_EFriendRelationshipNone};
     int steam_ping{-1};

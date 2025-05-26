@@ -11,6 +11,7 @@
 #include "../renderer/texture.hpp"
 
 #include <elden-x/fe.hpp>
+#include <elden-x/now_loading_helper.hpp>
 
 #include <imgui.h>
 
@@ -118,24 +119,34 @@ void gg::gui::initialize_player_list() {
 }
 
 void gg::gui::render_player_list(ImVec2 pos, bool is_open) {
-    static fade_in_out fade_in_out;
+    static fade_in_out<.2f> fade_in_out;
     static bool is_block_player_open = false;
     static bool is_disconnect_open = false;
 
     update_player_list();
 
-    bool can_show_player_list =
+    bool has_any_players =
         ranges::any_of(player_list_entries, [](auto &entry) { return entry.has_value(); });
 
-    // Hide the player list when the HP/FP/SP bars are hidden, since this means another menu
-    // (e.g. the map or equipment screen) is open
-    auto feman = er::CS::CSFeMan::instance();
-    if (!feman || !feman->state.show_player_status) {
-        can_show_player_list = false;
+    bool can_show_player_list = has_any_players;
+
+    if (can_show_player_list) {
+        // Hide the player list while loading
+        auto now_loading_helper = er::CS::CSNowLoadingHelper::instance();
+        if ((!now_loading_helper || !now_loading_helper->loaded1)) {
+            can_show_player_list = false;
+        } else {
+            // Hide the player list when the HP/FP/SP bars are hidden, since this means another menu
+            // (e.g. the map or equipment screen) is open
+            auto feman = er::CS::CSFeMan::instance();
+            if (!feman || !feman->state.show_player_status) {
+                can_show_player_list = false;
+            }
+        }
     }
 
     // Skip rendering the overlay if there are no entries, so we don't ever show a blank rectangle
-    if (!fade_in_out.animate(can_show_player_list && is_open) || !can_show_player_list) {
+    if (!fade_in_out.animate(can_show_player_list && is_open) || !has_any_players) {
         is_block_player_open = false;
         is_disconnect_open = false;
         return;
@@ -200,7 +211,7 @@ void gg::gui::render_player_list(ImVec2 pos, bool is_open) {
         auto pos = windowpos - ImVec2{10.f, 8.f} * scale;
         auto size =
             ImVec2{windowsize.x, player_list_row_height * scale} + ImVec2{12.f, 15.f} * scale;
-        for (auto entry : player_list_entries) {
+        for (auto &entry : player_list_entries) {
             if (entry.has_value()) {
                 if (entry->player && entry->player->game_data->hp == 0) {
                     render_nine_slice(

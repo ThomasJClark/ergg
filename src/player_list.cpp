@@ -56,11 +56,12 @@ void gg::update_player_list() {
             if (show_test_data) {
                 auto avatar = load_player_steam_avatar(SteamUser()->GetSteamID());
                 player_list_entries.resize(3);
-                player_list_entries[0].emplace(nullptr, "Tom", "Tom", avatar,
+                player_list_entries[0].emplace(nullptr, "Tom", "Tom", "Tom (Tom)", avatar,
                                                k_EFriendRelationshipNone, 48);
-                player_list_entries[1].emplace(nullptr, "Bingus", "Bingus", avatar,
-                                               k_EFriendRelationshipIgnored, 31);
-                player_list_entries[2].emplace(nullptr, "Guts", "John Steamfriend", avatar,
+                player_list_entries[1].emplace(nullptr, "Bingus", "Bingus", "Bingus (Bingus)",
+                                               avatar, k_EFriendRelationshipIgnored, 31);
+                player_list_entries[2].emplace(nullptr, "Guts", "John Steamfriend",
+                                               "Guts (John Steamfriend)", avatar,
                                                k_EFriendRelationshipFriend, 93);
             }
         }
@@ -82,21 +83,34 @@ void gg::update_player_list() {
         return;
     }
 
-    player_list_entries.resize(world_chr_man->player_chr_set.capacity());
+    // Resize the player list to the current capacity. We don't shrink the list at this point since
+    // we want to log disconnections for players that are no longer in the session.
+    auto capacity = world_chr_man->player_chr_set.capacity();
+    if (capacity > player_list_entries.size()) {
+        player_list_entries.resize(capacity);
+    }
+
+    // Update each remaining entry based on the current player list
     for (int i = 0; i < player_list_entries.size(); i++) {
         auto player = world_chr_man->player_chr_set.at(i);
         auto &entry = player_list_entries.at(i);
 
+        // If the player in this entry is no longer in the slot, remove the old entry
+        if (entry && entry->player != player) {
+            SPDLOG_INFO("Disconnected from {}", entry->debug_name);
+            entry.reset();
+        }
+
+        // Only show ourself if configured to do so, otherwise just show other players
         if (player && player->session_holder.network_session &&
             (gg::config::show_yourself || player != world_chr_man->main_player)) {
             auto steam_id = player->session_holder.network_session->steam_id;
             bool just_connected = false;
 
-            // If this slot was previously empty or had a different player, construct a new
-            // entry for this player
-            if (!entry || entry->player != player) {
-                entry = gg::player_list_entry{};
-                entry->player = player;
+            // When adding a player to the list for the first time, look up their avatar and name.
+            // No need to refresh these every update.
+            if (!entry) {
+                entry = gg::player_list_entry{.player = player};
 
                 if (gg::config::show_steam_avatar) {
                     entry->steam_avatar = load_player_steam_avatar(steam_id);
@@ -106,15 +120,15 @@ void gg::update_player_list() {
                     entry->in_game_name = utf16_convert.to_bytes(player->game_data->name_c_str);
                 }
 
+                if (gg::config::show_steam_name) {
+                    entry->steam_name = SteamFriends()->GetFriendPersonaName(steam_id);
+                }
+
                 just_connected = true;
             }
 
-            if (gg::config::show_steam_name) {
-                entry->steam_name = SteamFriends()->GetFriendPersonaName(steam_id);
-            }
-
+            // Ping changes throughout a session, and is already free from Steam
             if (gg::config::show_ping) {
-                // Ping changes throughout a session, and is already free from Steam
                 auto steam_connection_status = SteamNetConnectionRealTimeStatus_t{};
                 auto steam_net_id = SteamNetworkingIdentity{};
                 steam_net_id.SetSteamID(steam_id);
@@ -131,6 +145,8 @@ void gg::update_player_list() {
                 }
             }
 
+            // Steam relationship can change throughout a session if we friend or block someone,
+            // and is also free from Steam
             if (gg::config::show_steam_relationship) {
                 entry->steam_relationship = SteamFriends()->GetFriendRelationship(steam_id);
             }
@@ -138,22 +154,24 @@ void gg::update_player_list() {
             if (just_connected) {
                 auto has_steam_name = !entry->steam_name.empty();
                 auto has_in_game_name = !entry->in_game_name.empty();
+
                 if (has_steam_name && has_in_game_name) {
-                    SPDLOG_INFO("Connected to {} ({}) - {}", entry->in_game_name, entry->steam_name,
-                                steam_id.ConvertToUint64());
+                    entry->debug_name = entry->in_game_name + " (" + entry->steam_name + ")";
                 } else if (has_steam_name) {
-                    SPDLOG_INFO("Connected to {} - {}", entry->steam_name,
-                                steam_id.ConvertToUint64());
+                    entry->debug_name = entry->steam_name;
                 } else if (has_in_game_name) {
-                    SPDLOG_INFO("Connected to {} - {}", entry->in_game_name,
-                                steam_id.ConvertToUint64());
+                    entry->debug_name = entry->in_game_name;
                 } else {
-                    SPDLOG_INFO("Connected to {}", steam_id.ConvertToUint64());
+                    entry->debug_name = to_string(steam_id.ConvertToUint64());
                 }
+
+                SPDLOG_INFO("Connected to {}", entry->debug_name);
             }
 
         } else {
             entry.reset();
         }
     }
+
+    player_list_entries.resize(capacity);
 }
