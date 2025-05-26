@@ -17,6 +17,7 @@ string &gg::logs::append() {
     if (logs_size == logs_ring.size()) {
         auto &oldest_entry = logs_ring[logs_begin];
         logs_begin = (logs_begin + 1) % logs_ring.size();
+        oldest_entry.clear();
         return oldest_entry;
     }
     return logs_ring[logs_size++];

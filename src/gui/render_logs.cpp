@@ -27,10 +27,6 @@ void gg::gui::render_logs(ImVec2 pos, bool is_open) {
     auto background_pos = pos + ImVec2{80.f - background_texture->width(), 19.f} * scale;
     auto text_pos = background_pos + ImVec2{80.f, 16.f} * scale;
 
-    if (ImGui::IsKeyPressed(ImGuiKey_H, false)) {
-        gg::logs::log("Hello, world!");
-    }
-
     render_nine_slice(
         ImGui::GetBackgroundDrawList(), background_texture->id(), background_texture->size(),
         background_pos,
