@@ -25,19 +25,23 @@ namespace fs = filesystem;
 
 float gg::gui::scale = 1.f;
 
+constexpr float font_oversample = 2.f;
+
 static void load_font() {
     auto resource = gg::config::get_resource("font");
     if (resource.has_value()) {
         auto font_data = resource.value();
 
         auto font_config = ImFontConfig{};
-        font_config.SizePixels = gg::gui::font_size;
+        font_config.SizePixels = gg::gui::font_size * font_oversample;
         font_config.PixelSnapH = false;
+        font_config.OversampleH = 1;
 
         auto &io = ImGui::GetIO();
         io.Fonts->AddFontFromMemoryCompressedTTF(font_data.data(), font_data.size(), 0,
                                                  &font_config);
         io.Fonts->Build();
+        io.Fonts->ClearInputData();
     }
 }
 
@@ -53,7 +57,7 @@ void gg::gui::render_overlay() {
     auto viewport = ImGui::GetMainViewport();
 
     gg::gui::scale = fminf(io.DisplaySize.y / virtual_size.y, io.DisplaySize.x / virtual_size.x);
-    io.FontGlobalScale = gg::gui::scale;
+    io.FontGlobalScale = gg::gui::scale / font_oversample;
 
     auto overlay_pos = viewport->WorkPos + ImVec2{viewport->WorkSize.x, 0.f} -
                        (viewport->WorkSize - virtual_size * scale) / 2.f;

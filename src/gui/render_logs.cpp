@@ -30,8 +30,7 @@ void gg::gui::render_logs(ImVec2 pos, bool is_open) {
     render_nine_slice(
         ImGui::GetBackgroundDrawList(), background_texture->id(), background_texture->size(),
         background_pos,
-        ImVec2{(float)background_texture->width(), (32.f + gg::logs::size() * 20.f) * scale} *
-            scale,
+        ImVec2{(float)background_texture->width(), (32.f + gg::logs::size() * 20.f)} * scale,
         ImVec2{0.f, 16.f}, fade_in_out.alpha * .8f);
 
     int i = 0;

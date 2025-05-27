@@ -86,15 +86,16 @@ void gg::gui::render_block_player(bool &is_open,
     static fade_in_out fade_in_out;
     if (fade_in_out.animate(is_open)) {
         auto color = ImGui::ColorConvertFloat4ToU32({1.f, 1.f, 1.f, fade_in_out.alpha});
-        auto size = gg::gui::player_list_avatar_size;
+        auto size = gg::gui::player_list_avatar_size * scale;
         auto pos = windowpos;
-        pos.x -= size.x + 8.f;
-        pos.y += ceilf((gg::gui::player_list_row_height - gg::gui::player_list_avatar_size.y) / 2);
+        pos.x -= (size.x + 8.f) * scale;
+        pos.y += ceilf((gg::gui::player_list_row_height - gg::gui::player_list_avatar_size.y) / 2) *
+                 scale;
         for (int i = 0; i < effective_player_count; i++) {
             auto &texture = number_key_textures[i];
             ImGui::GetForegroundDrawList()->AddImage(texture->id(), pos, pos + size, {0.f, 0.f},
                                                      {1.f, 1.f}, color);
-            pos.y += gg::gui::player_list_row_height;
+            pos.y += gg::gui::player_list_row_height * scale;
         }
 
         render_player_list_action_text(windowpos, windowsize, text, fade_in_out.alpha);
