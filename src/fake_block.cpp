@@ -63,12 +63,17 @@ void gg::initialize_fake_block() {
     out_stream.open(file_path, ios_base::app);
 }
 
-void gg::block_player(CSteamID steam_id) {
+void gg::block_player(const player_list_entry &entry) {
+    if (!entry.player || !entry.player->session_holder.network_session) {
+        return;
+    }
+
+    auto steam_id = entry.player->session_holder.network_session->steam_id;
     if (is_player_blocked(steam_id)) {
         return;
     }
 
-    SPDLOG_INFO("Blocking player {}", steam_id.ConvertToUint64());
+    SPDLOG_INFO("Blocking player {}", entry.debug_name);
 
     blocked_players.insert(steam_id);
 

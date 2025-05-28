@@ -48,6 +48,7 @@ static shared_ptr<spdlog::logger> make_logger(const fs::path &path) {
     logger->sinks().push_back(
         make_shared<spdlog::sinks::daily_file_sink_st>(path.string(), 0, 0, false, 5));
     logger->sinks().push_back(make_shared<overlay_sink>());
+    logger->flush_on(spdlog::level::info);
     spdlog::set_default_logger(logger);
     return logger;
 }

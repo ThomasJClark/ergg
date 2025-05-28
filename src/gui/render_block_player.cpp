@@ -1,7 +1,5 @@
 #define WIN32_LEAN_AND_MEAN
 
-#include <steam/steamclientpublic.h>
-
 #include "render_block_player.hpp"
 #include "styles.hpp"
 #include "utils.hpp"
@@ -54,22 +52,18 @@ void gg::gui::render_block_player(bool &is_open,
         // When in block mode, a number key can be pressed to block a single player
         int slot = 0;
         for (auto &entry : player_list_entries) {
-            if (!entry.has_value()) {
-                continue;
-            }
-
-            if ((ImGui::IsKeyPressed(static_cast<ImGuiKey>(ImGuiKey_1 + slot))) ||
-                (ImGui::IsKeyPressed(static_cast<ImGuiKey>(ImGuiKey_Keypad1 + slot)))) {
-                if (entry->player && entry->player->session_holder.network_session) {
-                    block_player(entry->player->session_holder.network_session->steam_id);
+            if (entry) {
+                if ((ImGui::IsKeyPressed(static_cast<ImGuiKey>(ImGuiKey_1 + slot))) ||
+                    (ImGui::IsKeyPressed(static_cast<ImGuiKey>(ImGuiKey_Keypad1 + slot)))) {
+                    block_player(*entry);
+                    is_open = false;
+                    break;
                 }
-                is_open = false;
-                break;
-            }
 
-            slot++;
-            if (slot >= number_key_textures.size()) {
-                break;
+                slot++;
+                if (slot >= number_key_textures.size()) {
+                    break;
+                }
             }
         }
     }
