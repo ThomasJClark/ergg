@@ -16,7 +16,9 @@ using namespace std;
 
 static string text = "Press again to disconnect, or ESC to cancel";
 
-void gg::gui::render_disconnect(bool &is_open, const ImVec2 &windowpos, const ImVec2 &windowsize) {
+bool gg::gui::render_disconnect(bool &is_open, const ImVec2 &windowpos, const ImVec2 &windowsize) {
+    bool opened = false;
+
     if (ImGui::IsKeyPressed(gg::config::disconnect_key)) {
         // Require a second press to confirm, to prevent accidental disconnects
         if (is_open) {
@@ -33,6 +35,7 @@ void gg::gui::render_disconnect(bool &is_open, const ImVec2 &windowpos, const Im
         }
 
         is_open = !is_open;
+        opened = is_open;
     }
 
     if (is_open && ImGui::IsKeyPressed(ImGuiKey_Escape)) {
@@ -43,4 +46,6 @@ void gg::gui::render_disconnect(bool &is_open, const ImVec2 &windowpos, const Im
     if (fade_in_out.animate(is_open)) {
         render_player_list_action_text(windowpos, windowsize, text, fade_in_out.alpha);
     }
+
+    return opened;
 }

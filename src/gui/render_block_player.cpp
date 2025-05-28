@@ -32,10 +32,12 @@ void gg::gui::initialize_block_player() {
     initialize_fake_block();
 }
 
-void gg::gui::render_block_player(bool &is_open,
+bool gg::gui::render_block_player(bool &is_open,
                                   const ImVec2 &windowpos,
                                   const ImVec2 &windowsize,
                                   int player_count) {
+    bool opened = false;
+
     static int last_player_count = 0;
 
     int effective_player_count = player_count;
@@ -46,6 +48,7 @@ void gg::gui::render_block_player(bool &is_open,
     // Enter block mode when the configured key is pressed
     if (ImGui::IsKeyPressed(gg::config::block_player_key)) {
         is_open = !is_open;
+        opened = is_open;
     }
 
     if (is_open) {
@@ -65,6 +68,10 @@ void gg::gui::render_block_player(bool &is_open,
                     break;
                 }
             }
+        }
+
+        if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+            is_open = false;
         }
     }
 
@@ -94,4 +101,6 @@ void gg::gui::render_block_player(bool &is_open,
 
         render_player_list_action_text(windowpos, windowsize, text, fade_in_out.alpha);
     }
+
+    return opened;
 }

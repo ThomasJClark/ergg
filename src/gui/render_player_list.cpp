@@ -224,8 +224,12 @@ void gg::gui::render_player_list(ImVec2 pos, bool is_open) {
         }
     }
 
-    render_block_player(is_block_player_open, windowpos, windowsize, player_count);
-    render_disconnect(is_disconnect_open, windowpos, windowsize);
+    if (render_block_player(is_block_player_open, windowpos, windowsize, player_count)) {
+        is_disconnect_open = false;
+    }
+    if (render_disconnect(is_disconnect_open, windowpos, windowsize)) {
+        is_block_player_open = false;
+    }
 
     ImGui::PopStyleVar(ImGuiStyleVar_WindowBorderSize);
     ImGui::PopStyleVar(ImGuiStyleVar_WindowPadding);
