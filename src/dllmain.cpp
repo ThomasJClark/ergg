@@ -76,6 +76,8 @@ bool WINAPI DllMain(HINSTANCE instance, unsigned int reason, void *reserved) {
             enable_debug_logging(logger);
         }
 
+        SPDLOG_INFO("GG version {}", PROJECT_VERSION);
+
         setup_thread = thread([]() {
             try {
                 modutils::initialize();

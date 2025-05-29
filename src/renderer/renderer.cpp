@@ -151,8 +151,12 @@ public:
         setup_render_targets();
 
         ImGui::CreateContext();
-        ImGui::GetIO().ConfigFlags |=
-            ImGuiConfigFlags_NoMouse | ImGuiConfigFlags_NoMouseCursorChange;
+
+        auto &io = ImGui::GetIO();
+
+        io.ConfigFlags |= ImGuiConfigFlags_NoMouse | ImGuiConfigFlags_NoMouseCursorChange;
+        io.IniFilename = nullptr;
+        io.LogFilename = nullptr;
 
         initialize_callback();
 
