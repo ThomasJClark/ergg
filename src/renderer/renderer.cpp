@@ -151,7 +151,8 @@ public:
         setup_render_targets();
 
         ImGui::CreateContext();
-        ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+        ImGui::GetIO().ConfigFlags |=
+            ImGuiConfigFlags_NoMouse | ImGuiConfigFlags_NoMouseCursorChange;
 
         initialize_callback();
 
