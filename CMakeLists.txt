@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.28.1)
 set(CMAKE_GENERATOR_PLATFORM x64)
 
 project(ergg
-  VERSION   "1.0.1"
+  VERSION   "1.0.2"
   LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -13,7 +13,7 @@ include(FetchContent)
 
 FetchContent_Declare(mini
   GIT_REPOSITORY        https://github.com/metayeti/mINI.git
-  GIT_TAG               0.9.15
+  GIT_TAG               0.9.18
   CONFIGURE_COMMAND     ""
   BUILD_COMMAND         "")
 
@@ -51,7 +51,6 @@ FetchContent_Declare(elden-x
 
 add_definitions(-D_ITERATOR_DEBUG_LEVEL=0)
 
-
 FetchContent_MakeAvailable(
   mini
   spdlog
@@ -60,9 +59,6 @@ FetchContent_MakeAvailable(
   freetype
   steamworks-sdk
   elden-x)
-
-add_library(mini INTERFACE)
-target_include_directories(mini INTERFACE ${mini_SOURCE_DIR}/src)
 
 add_library(imgui
 	${imgui_SOURCE_DIR}/imgui.cpp
@@ -116,7 +112,7 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
   COMMAND_EXPAND_LISTS)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
-  mini
+  mINI
   spdlog
   imgui
   stb

@@ -118,7 +118,7 @@ void gg::config::load() {
     auto ini_path = mod_folder / "ergg.ini";
     SPDLOG_DEBUG("Loading config from {}", ini_path.string());
 
-    auto file = mINI::INIFile{ini_path.string()};
+    auto file = mINI::INIFile{ini_path};
     auto ini = mINI::INIStructure{};
     if (!file.read(ini)) {
         SPDLOG_WARN("Failed to read config");

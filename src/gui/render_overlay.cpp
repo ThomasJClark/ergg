@@ -59,8 +59,13 @@ void gg::gui::render_overlay() {
     gg::gui::scale = fminf(io.DisplaySize.y / virtual_size.y, io.DisplaySize.x / virtual_size.x);
     io.FontGlobalScale = gg::gui::scale / font_oversample;
 
-    auto overlay_pos = viewport->WorkPos + ImVec2{viewport->WorkSize.x, 0.f} -
-                       (viewport->WorkSize - virtual_size * scale) / 2.f;
+    // Top right corner
+    auto overlay_pos = viewport->WorkPos + ImVec2{viewport->WorkSize.x, 0.f};
+
+    // Adjust the position to the left or down if the aspect ratio isn't 16:9, so it's at the corner
+    // of the HUD instead of the corner of the screen
+    overlay_pos.x -= (viewport->WorkSize.x - virtual_size.x * scale) / 2.f;
+    overlay_pos.y += (viewport->WorkSize.y - virtual_size.y * scale) / 2.f;
 
     static bool is_player_list_open = true;
     static bool is_logs_open = false;
