@@ -192,7 +192,7 @@ public:
 
     virtual void execute(er::FD4::task_data *data,
                          er::FD4::task_group group,
-                         er::FD4::task_affinity affinity) override {
+                         er::FD4::task_runner runner) override {
         auto gxglobals = er::GXBS::globals::instance();
         auto command_queue = gxglobals->get_command_queue();
         auto swap_chain = gxglobals->get_swap_chain();
@@ -304,7 +304,18 @@ void gg::renderer::initialize(function<void()> initialize_callback,
         decltype(swap_chain_resize_buffers) resize_buffers;
     };
 
-    auto swap_chain = er::GXBS::globals::instance()->get_swap_chain();
+    using clock = chrono::high_resolution_clock;
+
+    er::GXBS::globals *gxglobals;
+    while (!(gxglobals = er::GXBS::globals::instance())) {
+        YieldProcessor();
+    }
+
+    IDXGISwapChain3 *swap_chain;
+    while (!(swap_chain = gxglobals->get_swap_chain())) {
+        YieldProcessor();
+    }
+
     auto &resize_buffers =
         (*reinterpret_cast<swap_chain_vftable_type **>(swap_chain))->resize_buffers;
 

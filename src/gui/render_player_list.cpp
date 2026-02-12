@@ -231,8 +231,5 @@ void gg::gui::render_player_list(ImVec2 pos, bool is_open) {
         is_block_player_open = false;
     }
 
-    ImGui::PopStyleVar(ImGuiStyleVar_WindowBorderSize);
-    ImGui::PopStyleVar(ImGuiStyleVar_WindowPadding);
-    ImGui::PopStyleVar(ImGuiStyleVar_CellPadding);
-    ImGui::PopStyleVar(ImGuiStyleVar_Alpha);
+    ImGui::PopStyleVar(4);
 }

@@ -82,7 +82,6 @@ bool WINAPI DllMain(HINSTANCE instance, unsigned int reason, void *reserved) {
             try {
                 modutils::initialize();
                 if (!modutils::sus) {
-                    this_thread::sleep_for(chrono::seconds(2));
                     er::FD4::find_singletons();
                     gg::renderer::initialize(gg::gui::initialize_overlay, gg::gui::render_overlay);
                     SPDLOG_INFO("Initialized mod");

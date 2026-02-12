@@ -40,5 +40,5 @@ void gg::gui::render_logs(ImVec2 pos, bool is_open) {
                                                 ImGui::GetColorU32(gg::gui::white), entry.c_str());
     });
 
-    ImGui::PopStyleVar(ImGuiStyleVar_Alpha);
+    ImGui::PopStyleVar(1);
 }
