@@ -29,7 +29,7 @@ static shared_ptr<gg::renderer::texture> menu_fe_namebase;
 /**
  * Draw saved information about a player in the game session to an ImGui table row
  */
-static void render_player_list_entry(const gg::player_list_entry &entry, int index) {
+static void render_player_list_entry(const gg::player_list_entry &entry, int32_t index) {
     auto text_offset_y = ceilf((gg::gui::player_list_row_height - gg::gui::font_size) / 2);
     auto avatar_offset_y =
         ceilf((gg::gui::player_list_row_height - gg::gui::player_list_avatar_size.y) / 2);
@@ -164,13 +164,13 @@ void gg::gui::render_player_list(ImVec2 pos, bool is_open) {
                      ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing |
                      ImGuiWindowFlags_NoNav);
 
-    int column_count = 1;
+    int32_t column_count = 1;
     if (config::show_steam_avatar) column_count++;
     if (config::show_ping) column_count++;
     if (config::show_level) column_count++;
 
     ImGui::BeginTable("player_list_table", column_count);
-    int player_count = 0;
+    int32_t player_count = 0;
     for (auto &entry : player_list_entries) {
         if (entry.has_value()) {
             player_count++;
@@ -198,7 +198,7 @@ void gg::gui::render_player_list(ImVec2 pos, bool is_open) {
         auto padding = ImVec2{16.f, 0.f} * scale;
         auto pos = windowpos - padding;
         auto size = ImVec2{windowsize.x, player_list_row_height * scale} + padding * 2.f;
-        for (int i = 0; i < player_count; i++) {
+        for (int32_t i = 0; i < player_count; i++) {
             render_nine_slice(ImGui::GetBackgroundDrawList(), menu_fe_namebase->id(),
                               menu_fe_namebase->size(), pos, size, {36.f, 0.f}, .8f);
 

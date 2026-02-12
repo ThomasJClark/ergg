@@ -30,8 +30,8 @@ static shared_ptr<gg::renderer::texture> load_player_steam_avatar(CSteamID steam
         return nullptr;
     }
 
-    unsigned int avatar_width;
-    unsigned int avatar_height;
+    uint32_t avatar_width;
+    uint32_t avatar_height;
     if (!SteamUtils()->GetImageSize(avatar, &avatar_width, &avatar_height)) {
         return nullptr;
     }
@@ -91,7 +91,7 @@ void gg::update_player_list() {
     }
 
     // Update each remaining entry based on the current player list
-    for (int i = 0; i < player_list_entries.size(); i++) {
+    for (int32_t i = 0; i < player_list_entries.size(); i++) {
         auto player = world_chr_man->player_chr_set.at(i);
         auto &entry = player_list_entries.at(i);
 

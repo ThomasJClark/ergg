@@ -20,7 +20,7 @@ extern bool show_steam_name;
 extern bool show_steam_avatar;
 extern bool show_steam_relationship;
 extern bool show_ping;
-extern unsigned int high_ping;
+extern uint32_t high_ping;
 extern bool show_yourself;
 
 extern ImGuiKey toggle_logs_key;
@@ -33,7 +33,7 @@ extern bool debug;
 void set_handle(HINSTANCE mod_handle);
 void load();
 
-std::optional<std::span<unsigned char>> get_resource(std::string name, std::string type = "DATA");
+std::optional<std::span<uint8_t>> get_resource(std::string name, std::string type = "DATA");
 
 }
 }

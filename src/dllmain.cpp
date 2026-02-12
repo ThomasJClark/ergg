@@ -64,7 +64,7 @@ static void enable_debug_logging(shared_ptr<spdlog::logger> logger) {
     logger->set_level(spdlog::level::trace);
 }
 
-bool WINAPI DllMain(HINSTANCE instance, unsigned int reason, void *reserved) {
+bool WINAPI DllMain(HINSTANCE instance, uint32_t reason, void *reserved) {
     static thread setup_thread;
 
     if (reason == DLL_PROCESS_ATTACH) {

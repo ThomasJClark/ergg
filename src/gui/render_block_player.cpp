@@ -35,12 +35,12 @@ void gg::gui::initialize_block_player() {
 bool gg::gui::render_block_player(bool &is_open,
                                   const ImVec2 &windowpos,
                                   const ImVec2 &windowsize,
-                                  int player_count) {
+                                  int32_t player_count) {
     bool opened = false;
 
-    static int last_player_count = 0;
+    static int32_t last_player_count = 0;
 
-    int effective_player_count = player_count;
+    int32_t effective_player_count = player_count;
     if (effective_player_count > number_key_textures.size()) {
         effective_player_count = number_key_textures.size();
     }
@@ -53,7 +53,7 @@ bool gg::gui::render_block_player(bool &is_open,
 
     if (is_open) {
         // When in block mode, a number key can be pressed to block a single player
-        int slot = 0;
+        int32_t slot = 0;
         for (auto &entry : player_list_entries) {
             if (entry) {
                 if ((ImGui::IsKeyPressed(static_cast<ImGuiKey>(ImGuiKey_1 + slot))) ||
@@ -92,7 +92,7 @@ bool gg::gui::render_block_player(bool &is_open,
         pos.x -= (size.x + 8.f) * scale;
         pos.y += ceilf((gg::gui::player_list_row_height - gg::gui::player_list_avatar_size.y) / 2) *
                  scale;
-        for (int i = 0; i < effective_player_count; i++) {
+        for (int32_t i = 0; i < effective_player_count; i++) {
             auto &texture = number_key_textures[i];
             ImGui::GetForegroundDrawList()->AddImage(texture->id(), pos, pos + size, {0.f, 0.f},
                                                      {1.f, 1.f}, color);

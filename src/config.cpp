@@ -20,7 +20,7 @@ bool gg::config::show_steam_name = true;
 bool gg::config::show_steam_avatar = true;
 bool gg::config::show_steam_relationship = true;
 bool gg::config::show_ping = true;
-unsigned int gg::config::high_ping = 100;
+uint32_t gg::config::high_ping = 100;
 bool gg::config::show_yourself = false;
 
 ImGuiKey gg::config::toggle_logs_key = ImGuiKey_GraveAccent;
@@ -160,14 +160,14 @@ void gg::config::load() {
     SPDLOG_DEBUG("high_ping = {}", high_ping);
     SPDLOG_DEBUG("show_yourself = {}", show_yourself);
 
-    SPDLOG_DEBUG("toggle_player_list = 0x{:x}", (int)toggle_player_list_key);
-    SPDLOG_DEBUG("block_player = 0x{:x}", (int)block_player_key);
-    SPDLOG_DEBUG("disconnect = 0x{:x}", (int)disconnect_key);
+    SPDLOG_DEBUG("toggle_player_list = 0x{:x}", (int32_t)toggle_player_list_key);
+    SPDLOG_DEBUG("block_player = 0x{:x}", (int32_t)block_player_key);
+    SPDLOG_DEBUG("disconnect = 0x{:x}", (int32_t)disconnect_key);
 
     SPDLOG_DEBUG("debug = {}", debug);
 }
 
-optional<span<unsigned char>> gg::config::get_resource(string name, string type) {
+optional<span<uint8_t>> gg::config::get_resource(string name, string type) {
     auto res = FindResourceA(mod_handle, name.data(), type.data());
     if (!res) {
         SPDLOG_CRITICAL("Failed to find mod resource ({}) {} {}", GetLastError(), name, type);
@@ -184,7 +184,7 @@ optional<span<unsigned char>> gg::config::get_resource(string name, string type)
         SPDLOG_CRITICAL("Failed to load mod resource ({}) {} {}", GetLastError(), name, type);
         return {};
     }
-    auto data = reinterpret_cast<unsigned char *>(LockResource(handle));
+    auto data = reinterpret_cast<uint8_t *>(LockResource(handle));
     if (!data) {
         SPDLOG_CRITICAL("Failed to get mod resource data ({}) {} {}", GetLastError(), name, type);
         return {};

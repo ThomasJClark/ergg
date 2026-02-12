@@ -33,7 +33,7 @@ void gg::gui::render_logs(ImVec2 pos, bool is_open) {
         ImVec2{(float)background_texture->width(), (32.f + gg::logs::size() * 20.f)} * scale,
         ImVec2{0.f, 16.f}, fade_in_out.alpha * .8f);
 
-    int i = 0;
+    int32_t i = 0;
     gg::logs::for_each([&](const auto &entry) {
         ImGui::GetBackgroundDrawList()->AddText(nullptr, 0.f,
                                                 text_pos + ImVec2{0.f, i++ * 20.f} * scale,

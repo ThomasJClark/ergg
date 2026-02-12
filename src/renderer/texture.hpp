@@ -22,15 +22,15 @@ class texture;
 /**
  * Simple helper function to load a DX12 texture from 8 bit RGBA pixels already stored in memory
  */
-std::shared_ptr<texture> load_texture_from_raw_data(unsigned char *image_data,
-                                                    int width,
-                                                    int height);
+std::shared_ptr<texture> load_texture_from_raw_data(uint8_t *image_data,
+                                                    int32_t width,
+                                                    int32_t height);
 
 /**
  * Simple helper function to load a DX12 texture from an image file (PNG, JPEG, etc.) loaded into
  * memory
  */
-std::shared_ptr<texture> load_texture_from_memory(std::span<unsigned char> data);
+std::shared_ptr<texture> load_texture_from_memory(std::span<uint8_t> data);
 
 /**
  * Simple helper function to load a DX12 texture from an image file on disk
@@ -50,7 +50,7 @@ private:
     ImVec2 size_vector;
 
 public:
-    texture(ID3D12Resource *resource, int width, int height)
+    texture(ID3D12Resource *resource, int32_t width, int32_t height)
         : resource(resource),
           size_vector((float)width, (float)height) {
         desc = gg::renderer::impl::alloc_descriptor();
@@ -71,8 +71,9 @@ public:
     const ImVec2 &size() { return size_vector; }
     ImTextureID id() { return desc.second.ptr; }
 
-    friend std::shared_ptr<texture> gg::renderer::load_texture_from_raw_data(
-        unsigned char *image_data, int width, int height);
+    friend std::shared_ptr<texture> gg::renderer::load_texture_from_raw_data(uint8_t *image_data,
+                                                                             int32_t width,
+                                                                             int32_t height);
 };
 
 }

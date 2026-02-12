@@ -23,8 +23,8 @@ struct player_list_entry {
     std::string debug_name;
     std::shared_ptr<gg::renderer::texture> steam_avatar;
     EFriendRelationship steam_relationship{k_EFriendRelationshipNone};
-    int steam_ping{-1};
-    int steam_ping_cumulative_error{0};
+    int32_t steam_ping{-1};
+    int32_t steam_ping_cumulative_error{0};
 };
 
 /**

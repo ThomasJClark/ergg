@@ -17,8 +17,9 @@
 using namespace std;
 namespace fs = std::filesystem;
 
-shared_ptr<gg::renderer::texture> gg::renderer::load_texture_from_raw_data(
-    unsigned char *image_data, int width, int height) {
+shared_ptr<gg::renderer::texture> gg::renderer::load_texture_from_raw_data(uint8_t *image_data,
+                                                                           int32_t width,
+                                                                           int32_t height) {
     auto &device = gg::renderer::impl::device;
 
     auto upload_pitch = (width * 4 + D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1u) &
@@ -84,7 +85,7 @@ shared_ptr<gg::renderer::texture> gg::renderer::load_texture_from_raw_data(
         return nullptr;
     }
 
-    for (int y = 0; y < height; y++)
+    for (int32_t y = 0; y < height; y++)
         memcpy((void *)((uintptr_t)mapped + y * upload_pitch), image_data + y * width * 4,
                width * 4);
     buffer->Unmap(0, &range);
@@ -94,8 +95,8 @@ shared_ptr<gg::renderer::texture> gg::renderer::load_texture_from_raw_data(
         .pResource = buffer,
         .Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT,
         .PlacedFootprint = {.Footprint = {.Format = DXGI_FORMAT_R8G8B8A8_UNORM,
-                                          .Width = static_cast<unsigned int>(width),
-                                          .Height = static_cast<unsigned int>(height),
+                                          .Width = static_cast<uint32_t>(width),
+                                          .Height = static_cast<uint32_t>(height),
                                           .Depth = 1,
                                           .RowPitch = upload_pitch}}};
 
@@ -172,8 +173,8 @@ shared_ptr<gg::renderer::texture> gg::renderer::load_texture_from_raw_data(
     return result;
 }
 
-shared_ptr<gg::renderer::texture> gg::renderer::load_texture_from_memory(span<unsigned char> data) {
-    int width, height;
+shared_ptr<gg::renderer::texture> gg::renderer::load_texture_from_memory(span<uint8_t> data) {
+    int32_t width, height;
     auto image_data = stbi_load_from_memory(data.data(), data.size(), &width, &height, nullptr, 4);
     if (!image_data) return nullptr;
 
@@ -185,7 +186,7 @@ shared_ptr<gg::renderer::texture> gg::renderer::load_texture_from_memory(span<un
 }
 
 shared_ptr<gg::renderer::texture> gg::renderer::load_texture_from_file(fs::path filename) {
-    auto stream = basic_ifstream<unsigned char>{filename, ios::binary | ios::ate};
+    auto stream = basic_ifstream<uint8_t>{filename, ios::binary | ios::ate};
     if (stream.fail()) {
         SPDLOG_CRITICAL("Failed to load texture {}", filename.string());
         return nullptr;
@@ -194,7 +195,7 @@ shared_ptr<gg::renderer::texture> gg::renderer::load_texture_from_file(fs::path 
     auto size = stream.tellg();
     stream.seekg(0, ios::beg);
 
-    auto data = vector<unsigned char>(size);
+    auto data = vector<uint8_t>(size);
     if (!stream.read(data.data(), size)) {
         SPDLOG_CRITICAL("Failed to load texture {}", filename.string());
         return nullptr;

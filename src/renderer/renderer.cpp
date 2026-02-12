@@ -17,16 +17,16 @@
 
 using namespace std;
 
-extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND, unsigned int, WPARAM, LPARAM);
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND, uint32_t, WPARAM, LPARAM);
 
 ID3D12Device *gg::renderer::impl::device;
 
-static constexpr unsigned int srv_descriptor_count = 1024;
+static constexpr uint32_t srv_descriptor_count = 1024;
 
 static D3D12_CPU_DESCRIPTOR_HANDLE heap_start_cpu;
 static D3D12_GPU_DESCRIPTOR_HANDLE heap_start_gpu;
-static unsigned int increment_size;
-static vector<int> free_indexes;
+static uint32_t increment_size;
+static vector<int32_t> free_indexes;
 
 struct render_task : public er::CS::CSEzTask {
 private:
@@ -83,7 +83,7 @@ public:
 
             auto desc = D3D12_DESCRIPTOR_HEAP_DESC{
                 .Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
-                .NumDescriptors = static_cast<unsigned int>(render_targets.size()),
+                .NumDescriptors = static_cast<uint32_t>(render_targets.size()),
                 .Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE,
             };
             if (gg::renderer::impl::device->CreateDescriptorHeap(
@@ -110,8 +110,8 @@ public:
             heap_start_gpu = srv_descriptor_heap->GetGPUDescriptorHandleForHeapStart();
             increment_size =
                 gg::renderer::impl::device->GetDescriptorHandleIncrementSize(desc.Type);
-            free_indexes.reserve((int)desc.NumDescriptors);
-            for (int n = desc.NumDescriptors; n > 0; n--) {
+            free_indexes.reserve((int32_t)desc.NumDescriptors);
+            for (int32_t n = desc.NumDescriptors; n > 0; n--) {
                 free_indexes.push_back(n);
             }
         }
@@ -131,7 +131,7 @@ public:
 
         auto back_buffers_heap_desc = D3D12_DESCRIPTOR_HEAP_DESC{
             .Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV,
-            .NumDescriptors = static_cast<unsigned int>(render_targets.size()),
+            .NumDescriptors = static_cast<uint32_t>(render_targets.size()),
             .Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE,
             .NodeMask = 1,
         };
@@ -248,7 +248,7 @@ public:
  * https://learn.microsoft.com/en-us/windows/win32/api/winuser/nc-winuser-wndproc
  */
 static WNDPROC wndproc;
-static LRESULT wndproc_hook(HWND hwnd, unsigned int msg, WPARAM wparam, LPARAM lparam) {
+static LRESULT wndproc_hook(HWND hwnd, uint32_t msg, WPARAM wparam, LPARAM lparam) {
     if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam)) {
         return true;
     }
@@ -266,13 +266,13 @@ static render_task task;
  * https://learn.microsoft.com/en-us/windows/win32/api/dxgi/nf-dxgi-idxgiswapchain-resizebuffers
  */
 static HRESULT (*swap_chain_resize_buffers)(
-    IDXGISwapChain *, unsigned int, unsigned int, unsigned int, DXGI_FORMAT, unsigned int);
+    IDXGISwapChain *, uint32_t, uint32_t, uint32_t, DXGI_FORMAT, uint32_t);
 static HRESULT swap_chain_resize_buffers_hook(IDXGISwapChain *_this,
-                                              unsigned int buffer_count,
-                                              unsigned int width,
-                                              unsigned int height,
+                                              uint32_t buffer_count,
+                                              uint32_t width,
+                                              uint32_t height,
                                               DXGI_FORMAT new_format,
-                                              unsigned int flags) {
+                                              uint32_t flags) {
     task.release_render_targets();
     auto hr = swap_chain_resize_buffers(_this, buffer_count, width, height, new_format, flags);
     task.setup_render_targets();
@@ -287,7 +287,7 @@ gg::renderer::impl::descriptor_pair gg::renderer::impl::alloc_descriptor() {
 }
 
 void gg::renderer::impl::free_descriptor(gg::renderer::impl::descriptor_pair pair) {
-    int index = (int)((pair.first.ptr - heap_start_cpu.ptr) / increment_size);
+    int32_t index = (int32_t)((pair.first.ptr - heap_start_cpu.ptr) / increment_size);
     free_indexes.push_back(index);
 }
 

@@ -37,8 +37,8 @@ void gg::gui::render_nine_slice(ImDrawList *drawlist,
         uvs[2].y = 1.f - uvs[1].y;
     }
 
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
+    for (int32_t i = 0; i < 3; i++) {
+        for (int32_t j = 0; j < 3; j++) {
             if (verts[i].x == verts[i + 1].x || verts[j].y == verts[j + 1].y) continue;
 
             drawlist->AddImage(texture_id, {verts[i].x, verts[j].y},
