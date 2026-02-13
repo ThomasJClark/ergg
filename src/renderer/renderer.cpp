@@ -293,6 +293,16 @@ void gg::renderer::impl::free_descriptor(gg::renderer::impl::descriptor_pair pai
 
 void gg::renderer::initialize(function<void()> initialize_callback,
                               function<void()> render_callback) {
+    er::GXBS::globals *gxglobals;
+    while (!(gxglobals = er::GXBS::globals::instance())) {
+        YieldProcessor();
+    }
+
+    IDXGISwapChain3 *swap_chain;
+    while (!(swap_chain = gxglobals->get_swap_chain())) {
+        YieldProcessor();
+    }
+
     auto hwnd = er::CS::CSWindow::instance()->hwnd;
     wndproc = (WNDPROC)SetWindowLongPtrW(hwnd, GWLP_WNDPROC, (LONG_PTR)wndproc_hook);
 
@@ -303,18 +313,6 @@ void gg::renderer::initialize(function<void()> initialize_callback,
         void *unk[13];
         decltype(swap_chain_resize_buffers) resize_buffers;
     };
-
-    using clock = chrono::high_resolution_clock;
-
-    er::GXBS::globals *gxglobals;
-    while (!(gxglobals = er::GXBS::globals::instance())) {
-        YieldProcessor();
-    }
-
-    IDXGISwapChain3 *swap_chain;
-    while (!(swap_chain = gxglobals->get_swap_chain())) {
-        YieldProcessor();
-    }
 
     auto &resize_buffers =
         (*reinterpret_cast<swap_chain_vftable_type **>(swap_chain))->resize_buffers;
