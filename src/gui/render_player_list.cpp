@@ -1,4 +1,5 @@
 #include <steam/steamclientpublic.h>
+#include <spdlog/spdlog.h>
 
 #include "render_block_player.hpp"
 #include "render_disconnect.hpp"
@@ -34,7 +35,6 @@ static void render_player_list_entry(const gg::player_list_entry &entry, int32_t
     auto avatar_offset_y =
         ceilf((gg::gui::player_list_row_height - gg::gui::player_list_avatar_size.y) / 2);
 
-    // Color friends in green, blocked players in red, and me in blue
     auto color = ImVec4{};
     if (gg::config::show_steam_relationship &&
         entry.steam_relationship == k_EFriendRelationshipFriend) {
@@ -49,12 +49,10 @@ static void render_player_list_entry(const gg::player_list_entry &entry, int32_t
 
     ImGui::TableNextRow(ImGuiTableRowFlags_None, gg::gui::player_list_row_height * gg::gui::scale);
 
-    // Column 1 - render the avatar on the player's Steam profile, if there is one
     if (gg::config::show_steam_avatar) {
         ImGui::TableNextColumn();
         ImGui::SetCursorPosY(ImGui::GetCursorPosY() + avatar_offset_y * gg::gui::scale);
         if (entry.steam_avatar) {
-            // Outline the avatar with the highlight color, if any
             if (color.w) {
                 ImGui::GetForegroundDrawList()->AddRect(
                     ImGui::GetCursorScreenPos() - ImVec2{.5f, .5f} * gg::gui::scale,
@@ -63,13 +61,11 @@ static void render_player_list_entry(const gg::player_list_entry &entry, int32_t
                     ImGui::GetColorU32(color), gg::gui::scale, ImDrawFlags_None,
                     2.f * gg::gui::scale);
             }
-
             ImGui::Image(entry.steam_avatar->id(),
                          gg::gui::player_list_avatar_size * gg::gui::scale);
         }
     }
 
-    // Column 2 - render the player's in-game name and Steam profile name
     auto show_in_game_name = gg::config::show_in_game_name && !entry.in_game_name.empty();
     auto show_steam_name = gg::config::show_steam_name && !entry.steam_name.empty();
     auto &name_color = color.w ? color : gg::gui::white;
@@ -88,7 +84,6 @@ static void render_player_list_entry(const gg::player_list_entry &entry, int32_t
         ImGui::TextColored(name_color, "Player %d", index + 1);
     }
 
-    // Column 3 - rune level
     if (gg::config::show_level) {
         ImGui::TableNextColumn();
         ImGui::SetCursorPosY(ImGui::GetCursorPosY() + text_offset_y * gg::gui::scale);
@@ -99,7 +94,6 @@ static void render_player_list_entry(const gg::player_list_entry &entry, int32_t
         }
     }
 
-    // Column 4 - ping time estimated by Steam
     if (gg::config::show_ping) {
         ImGui::TableNextColumn();
         ImGui::SetCursorPosY(ImGui::GetCursorPosY() + text_offset_y * gg::gui::scale);
@@ -131,13 +125,10 @@ void gg::gui::render_player_list(ImVec2 pos, bool is_open) {
     bool can_show_player_list = has_any_players;
 
     if (can_show_player_list) {
-        // Hide the player list while loading
         auto now_loading_helper = er::CS::CSNowLoadingHelper::instance();
-        if ((!now_loading_helper || !now_loading_helper->loaded1)) {
+        if (!now_loading_helper || !now_loading_helper->loaded1) {
             can_show_player_list = false;
         } else {
-            // Hide the player list when the HP/FP/SP bars are hidden, since this means another menu
-            // (e.g. the map or equipment screen) is open
             auto feman = er::CS::CSFeMan::instance();
             if (!feman || !feman->state.show_player_status) {
                 can_show_player_list = false;
@@ -145,7 +136,6 @@ void gg::gui::render_player_list(ImVec2 pos, bool is_open) {
         }
     }
 
-    // Skip rendering the overlay if there are no entries, so we don't ever show a blank rectangle
     if (!fade_in_out.animate(can_show_player_list && is_open) || !has_any_players) {
         is_block_player_open = false;
         is_disconnect_open = false;
@@ -184,7 +174,6 @@ void gg::gui::render_player_list(ImVec2 pos, bool is_open) {
 
     ImGui::End();
 
-    // Draw a background behind the entire overlay
     if (container_background_texture) {
         auto padding = ImVec2{32, 28} * scale;
         auto pos = windowpos - padding;
@@ -193,7 +182,6 @@ void gg::gui::render_player_list(ImVec2 pos, bool is_open) {
                           container_background_texture->size(), pos, size, {56.f, 56.f}, .8f);
     }
 
-    // Draw a transprent texture behind each entry in the list
     if (menu_fe_namebase) {
         auto padding = ImVec2{16.f, 0.f} * scale;
         auto pos = windowpos - padding;
@@ -201,12 +189,10 @@ void gg::gui::render_player_list(ImVec2 pos, bool is_open) {
         for (int32_t i = 0; i < player_count; i++) {
             render_nine_slice(ImGui::GetBackgroundDrawList(), menu_fe_namebase->id(),
                               menu_fe_namebase->size(), pos, size, {36.f, 0.f}, .8f);
-
             pos.y += player_list_row_height * scale;
         }
     }
 
-    // Cross out dead players
     if (entry_background_texture) {
         auto pos = windowpos - ImVec2{10.f, 8.f} * scale;
         auto size =
@@ -218,7 +204,6 @@ void gg::gui::render_player_list(ImVec2 pos, bool is_open) {
                         ImGui::GetForegroundDrawList(), entry_background_texture->id(),
                         entry_background_texture->size() / 2.f, pos, size, {8.5f, 11.f});
                 }
-
                 pos.y += player_list_row_height * scale;
             }
         }

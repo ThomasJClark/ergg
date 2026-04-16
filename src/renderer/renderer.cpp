@@ -1,7 +1,6 @@
 #include "renderer.hpp"
 
 #include <elden-x/graphics.hpp>
-#include <elden-x/task.hpp>
 #include <elden-x/window.hpp>
 
 #include <backends/imgui_impl_dx12.h>
@@ -10,7 +9,6 @@
 
 #include <spdlog/spdlog.h>
 
-#include <chrono>
 #include <string>
 #include <thread>
 #include <vector>
@@ -25,274 +23,261 @@ static constexpr uint32_t srv_descriptor_count = 1024;
 
 static D3D12_CPU_DESCRIPTOR_HANDLE heap_start_cpu;
 static D3D12_GPU_DESCRIPTOR_HANDLE heap_start_gpu;
-static uint32_t increment_size;
+static uint32_t heap_increment_size;
 static vector<int32_t> free_indexes;
 
-struct render_task : public er::CS::CSEzTask {
-private:
-    /**
-     * True if the render has been set up and we can make draw calls each frame
-     */
-    bool initialized{false};
-
-    /**
-     * Callback to overlay rendering methods passed from dllmain
-     */
-    function<void()> initialize_callback;
-    function<void()> render_callback;
-
-    struct render_target {
-        ID3D12Resource *resource;
-        D3D12_CPU_DESCRIPTOR_HANDLE descriptor_handle;
-    };
-
-    vector<render_target> render_targets;
-
-    ID3D12DescriptorHeap *render_descriptor_heap{nullptr};
-    ID3D12DescriptorHeap *back_buffers_descriptor_heap{nullptr};
-
+struct frame_context {
     ID3D12CommandAllocator *command_allocator{nullptr};
-    ID3D12GraphicsCommandList *command_list{nullptr};
-    ID3D12DescriptorHeap *srv_descriptor_heap{nullptr};
-
-public:
-    void release_render_targets() {
-        for (auto &frame : render_targets) {
-            frame.resource->Release();
-        }
-    }
-
-    void setup_render_targets() {
-        auto swap_chain = er::GXBS::globals::instance()->get_swap_chain();
-        for (size_t i = 0; i < render_targets.size(); i++) {
-            swap_chain->GetBuffer(i, IID_PPV_ARGS(&render_targets[i].resource));
-            gg::renderer::impl::device->CreateRenderTargetView(render_targets[i].resource, nullptr,
-                                                               render_targets[i].descriptor_handle);
-        }
-    }
-
-    void initialize() {
-        auto swap_chain = er::GXBS::globals::instance()->get_swap_chain();
-        swap_chain->GetDevice(IID_PPV_ARGS(&gg::renderer::impl::device));
-
-        // Allocate a descriptor heap for the frames
-        {
-            DXGI_SWAP_CHAIN_DESC swap_chain_desc;
-            swap_chain->GetDesc(&swap_chain_desc);
-            render_targets.resize(swap_chain_desc.BufferCount);
-
-            auto desc = D3D12_DESCRIPTOR_HEAP_DESC{
-                .Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
-                .NumDescriptors = static_cast<uint32_t>(render_targets.size()),
-                .Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE,
-            };
-            if (gg::renderer::impl::device->CreateDescriptorHeap(
-                    &desc, IID_PPV_ARGS(&render_descriptor_heap)) != S_OK) {
-                return;
-            }
-        }
-
-        // Allocate a descriptor heap for shader resource values (textures and other buffers)
-        {
-            auto desc = D3D12_DESCRIPTOR_HEAP_DESC{
-                .Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
-                .NumDescriptors = srv_descriptor_count,
-                .Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE,
-            };
-            if (gg::renderer::impl::device->CreateDescriptorHeap(
-                    &desc, IID_PPV_ARGS(&srv_descriptor_heap)) != S_OK) {
-                return;
-            }
-        }
-        {
-            auto desc = srv_descriptor_heap->GetDesc();
-            heap_start_cpu = srv_descriptor_heap->GetCPUDescriptorHandleForHeapStart();
-            heap_start_gpu = srv_descriptor_heap->GetGPUDescriptorHandleForHeapStart();
-            increment_size =
-                gg::renderer::impl::device->GetDescriptorHandleIncrementSize(desc.Type);
-            free_indexes.reserve((int32_t)desc.NumDescriptors);
-            for (int32_t n = desc.NumDescriptors; n > 0; n--) {
-                free_indexes.push_back(n);
-            }
-        }
-
-        // Create the other bullshit you need to use DX12
-        if (gg::renderer::impl::device->CreateCommandAllocator(
-                D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&command_allocator)) != S_OK) {
-            return;
-        }
-
-        if (gg::renderer::impl::device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT,
-                                                          command_allocator, NULL,
-                                                          IID_PPV_ARGS(&command_list)) != S_OK ||
-            command_list->Close() != S_OK) {
-            return;
-        }
-
-        auto back_buffers_heap_desc = D3D12_DESCRIPTOR_HEAP_DESC{
-            .Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV,
-            .NumDescriptors = static_cast<uint32_t>(render_targets.size()),
-            .Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE,
-            .NodeMask = 1,
-        };
-        if (gg::renderer::impl::device->CreateDescriptorHeap(
-                &back_buffers_heap_desc, IID_PPV_ARGS(&back_buffers_descriptor_heap)) != S_OK) {
-            return;
-        }
-
-        auto descriptor_handle = back_buffers_descriptor_heap->GetCPUDescriptorHandleForHeapStart();
-        const auto increment_size = gg::renderer::impl::device->GetDescriptorHandleIncrementSize(
-            D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-
-        for (size_t i = 0; i < render_targets.size(); i++) {
-            render_targets[i].descriptor_handle.ptr = descriptor_handle.ptr + i * increment_size;
-        }
-
-        setup_render_targets();
-
-        ImGui::CreateContext();
-
-        auto &io = ImGui::GetIO();
-
-        io.ConfigFlags |= ImGuiConfigFlags_NoMouse | ImGuiConfigFlags_NoMouseCursorChange;
-        io.IniFilename = nullptr;
-        io.LogFilename = nullptr;
-
-        initialize_callback();
-
-        ImGui_ImplDX12_InitInfo init_info;
-        init_info.Device = gg::renderer::impl::device;
-        init_info.NumFramesInFlight = render_targets.size();
-        init_info.RTVFormat = DXGI_FORMAT_R10G10B10A2_UNORM;
-        init_info.SrvDescriptorHeap = render_descriptor_heap;
-        init_info.SrvDescriptorAllocFn = [](auto, auto *cpu_handle, auto *gpu_handle) {
-            tie(*cpu_handle, *gpu_handle) = gg::renderer::impl::alloc_descriptor();
-        };
-        init_info.SrvDescriptorFreeFn = [](auto, auto cpu_handle, auto gpu_handle) {
-            gg::renderer::impl::free_descriptor({cpu_handle, gpu_handle});
-        };
-
-        auto cs_window = er::CS::CSWindow::instance();
-
-        ImGui_ImplWin32_Init(cs_window->hwnd);
-        ImGui_ImplDX12_Init(&init_info);
-        ImGui_ImplDX12_CreateDeviceObjects();
-
-        ImGui::GetMainViewport()->PlatformHandleRaw = cs_window->hwnd;
-
-        initialized = true;
-    }
-
-public:
-    render_task() {}
-
-    render_task(function<void()> initialize_callback, function<void()> render_callback)
-        : initialize_callback(initialize_callback),
-          render_callback(render_callback) {}
-
-    virtual void execute(er::FD4::task_data *data,
-                         er::FD4::task_group group,
-                         er::FD4::task_runner runner) override {
-        auto gxglobals = er::GXBS::globals::instance();
-        auto command_queue = gxglobals->get_command_queue();
-        auto swap_chain = gxglobals->get_swap_chain();
-        if (!command_queue || !swap_chain) return;
-
-        // Set up ImGui the first time this is called
-        if (!initialized) initialize();
-        if (!initialized) return;
-
-        ImGui_ImplDX12_NewFrame();
-        ImGui_ImplWin32_NewFrame();
-
-        ImGui::NewFrame();
-        render_callback();
-        ImGui::EndFrame();
-        ImGui::Render();
-
-        auto &render_target = render_targets[swap_chain->GetCurrentBackBufferIndex()];
-
-        command_allocator->Reset();
-
-        auto resource_barrier = D3D12_RESOURCE_BARRIER{
-            .Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION,
-            .Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE,
-            .Transition = {.pResource = render_target.resource,
-                           .Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES,
-                           .StateBefore = D3D12_RESOURCE_STATE_PRESENT,
-                           .StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET}};
-
-        command_list->Reset(command_allocator, nullptr);
-        command_list->ResourceBarrier(1, &resource_barrier);
-        command_list->OMSetRenderTargets(1, &render_target.descriptor_handle, FALSE, nullptr);
-        command_list->SetDescriptorHeaps(1, &render_descriptor_heap);
-
-        ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), command_list);
-
-        resource_barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-        resource_barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
-
-        command_list->ResourceBarrier(1, &resource_barrier);
-        command_list->Close();
-
-        command_queue->ExecuteCommandLists(
-            1, reinterpret_cast<ID3D12CommandList *const *>(&command_list));
-    }
+    ID3D12Resource *render_target{nullptr};
+    D3D12_CPU_DESCRIPTOR_HANDLE render_target_descriptor{};
+    uint64_t fence_value{0};
 };
 
-/**
- * WNDPROC callback
- *
- * Handles ImGui events, then defers the the game's default WNDPROC
- *
- * https://learn.microsoft.com/en-us/windows/win32/api/winuser/nc-winuser-wndproc
- */
-static WNDPROC wndproc;
+static vector<frame_context> frames;
+static ID3D12GraphicsCommandList *command_list{nullptr};
+static ID3D12DescriptorHeap *rtv_heap{nullptr};
+static ID3D12DescriptorHeap *srv_heap{nullptr};
+static ID3D12Fence *fence{nullptr};
+static HANDLE fence_event{nullptr};
+static uint64_t fence_value{0};
+
+static bool initialized{false};
+
+static function<void()> g_initialize_callback;
+static function<void()> g_render_callback;
+
+static WNDPROC original_wndproc;
 static LRESULT wndproc_hook(HWND hwnd, uint32_t msg, WPARAM wparam, LPARAM lparam) {
     if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam)) {
         return true;
     }
-
-    return CallWindowProc(wndproc, hwnd, msg, wparam, lparam);
+    return CallWindowProc(original_wndproc, hwnd, msg, wparam, lparam);
 }
 
-static render_task task;
+static HRESULT (*original_present)(IDXGISwapChain3 *, uint32_t, uint32_t);
+static HRESULT (*original_resize_buffers)(IDXGISwapChain *, uint32_t, uint32_t, uint32_t, DXGI_FORMAT, uint32_t);
 
-/**
- * Hook for IDXGISwapChain::ResizeBuffers()
- *
- * Resizes our overlay render targets when the game window is resized
- *
- * https://learn.microsoft.com/en-us/windows/win32/api/dxgi/nf-dxgi-idxgiswapchain-resizebuffers
- */
-static HRESULT (*swap_chain_resize_buffers)(
-    IDXGISwapChain *, uint32_t, uint32_t, uint32_t, DXGI_FORMAT, uint32_t);
-static HRESULT swap_chain_resize_buffers_hook(IDXGISwapChain *_this,
-                                              uint32_t buffer_count,
-                                              uint32_t width,
-                                              uint32_t height,
-                                              DXGI_FORMAT new_format,
-                                              uint32_t flags) {
-    task.release_render_targets();
-    auto hr = swap_chain_resize_buffers(_this, buffer_count, width, height, new_format, flags);
-    task.setup_render_targets();
+static void wait_for_gpu(ID3D12CommandQueue *command_queue) {
+    fence_value++;
+    command_queue->Signal(fence, fence_value);
+    fence->SetEventOnCompletion(fence_value, fence_event);
+    WaitForSingleObject(fence_event, INFINITE);
+}
+
+static void setup_render_targets(IDXGISwapChain3 *swap_chain) {
+    auto rtv_handle = rtv_heap->GetCPUDescriptorHandleForHeapStart();
+    auto rtv_size = gg::renderer::impl::device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+    for (size_t i = 0; i < frames.size(); i++) {
+        swap_chain->GetBuffer(i, IID_PPV_ARGS(&frames[i].render_target));
+        gg::renderer::impl::device->CreateRenderTargetView(frames[i].render_target, nullptr, rtv_handle);
+        frames[i].render_target_descriptor = rtv_handle;
+        rtv_handle.ptr += rtv_size;
+    }
+}
+
+static void release_render_targets() {
+    for (auto &frame : frames) {
+        if (frame.render_target) {
+            frame.render_target->Release();
+            frame.render_target = nullptr;
+        }
+    }
+}
+
+static bool initialize_renderer(IDXGISwapChain3 *swap_chain, ID3D12CommandQueue *command_queue) {
+    swap_chain->GetDevice(IID_PPV_ARGS(&gg::renderer::impl::device));
+    auto device = gg::renderer::impl::device;
+
+    DXGI_SWAP_CHAIN_DESC sc_desc;
+    swap_chain->GetDesc(&sc_desc);
+    uint32_t buffer_count = sc_desc.BufferCount;
+
+    {
+        D3D12_DESCRIPTOR_HEAP_DESC desc{
+            .Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV,
+            .NumDescriptors = buffer_count,
+            .Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE,
+            .NodeMask = 1,
+        };
+        if (device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&rtv_heap)) != S_OK) {
+            SPDLOG_ERROR("renderer: failed to create RTV heap");
+            return false;
+        }
+    }
+
+    {
+        D3D12_DESCRIPTOR_HEAP_DESC desc{
+            .Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+            .NumDescriptors = srv_descriptor_count,
+            .Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE,
+        };
+        if (device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&srv_heap)) != S_OK) {
+            SPDLOG_ERROR("renderer: failed to create SRV heap");
+            return false;
+        }
+        heap_start_cpu = srv_heap->GetCPUDescriptorHandleForHeapStart();
+        heap_start_gpu = srv_heap->GetGPUDescriptorHandleForHeapStart();
+        heap_increment_size = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+        free_indexes.reserve(srv_descriptor_count);
+        for (int32_t n = srv_descriptor_count; n > 0; n--) {
+            free_indexes.push_back(n);
+        }
+    }
+
+    frames.resize(buffer_count);
+    for (auto &frame : frames) {
+        if (device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
+                                           IID_PPV_ARGS(&frame.command_allocator)) != S_OK) {
+            SPDLOG_ERROR("renderer: failed to create command allocator");
+            return false;
+        }
+    }
+
+    if (device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT,
+                                  frames[0].command_allocator, nullptr,
+                                  IID_PPV_ARGS(&command_list)) != S_OK ||
+        command_list->Close() != S_OK) {
+        SPDLOG_ERROR("renderer: failed to create command list");
+        return false;
+    }
+
+    if (device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)) != S_OK) {
+        SPDLOG_ERROR("renderer: failed to create fence");
+        return false;
+    }
+    fence_event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+
+    setup_render_targets(swap_chain);
+
+    ImGui::CreateContext();
+    auto &io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NoMouse | ImGuiConfigFlags_NoMouseCursorChange;
+    io.IniFilename = nullptr;
+    io.LogFilename = nullptr;
+
+    g_initialize_callback();
+
+    ImGui_ImplDX12_InitInfo init_info;
+    init_info.Device = device;
+    init_info.NumFramesInFlight = buffer_count;
+    init_info.RTVFormat = sc_desc.BufferDesc.Format;
+    init_info.SrvDescriptorHeap = srv_heap;
+    init_info.SrvDescriptorAllocFn = [](auto, auto *cpu, auto *gpu) {
+        tie(*cpu, *gpu) = gg::renderer::impl::alloc_descriptor();
+    };
+    init_info.SrvDescriptorFreeFn = [](auto, auto cpu, auto gpu) {
+        gg::renderer::impl::free_descriptor({cpu, gpu});
+    };
+
+    auto hwnd = er::CS::CSWindow::instance()->hwnd;
+    ImGui_ImplWin32_Init(hwnd);
+    ImGui_ImplDX12_Init(&init_info);
+    ImGui_ImplDX12_CreateDeviceObjects();
+    ImGui::GetMainViewport()->PlatformHandleRaw = hwnd;
+
+    original_wndproc = (WNDPROC)SetWindowLongPtrW(hwnd, GWLP_WNDPROC, (LONG_PTR)wndproc_hook);
+
+    SPDLOG_INFO("renderer: initialized");
+    return true;
+}
+
+static HRESULT present_hook(IDXGISwapChain3 *swap_chain, uint32_t sync_interval, uint32_t flags) {
+    auto gxglobals = er::GXBS::globals::instance();
+    if (!gxglobals) return original_present(swap_chain, sync_interval, flags);
+
+    auto command_queue = gxglobals->get_command_queue();
+    if (!command_queue) return original_present(swap_chain, sync_interval, flags);
+
+    if (!initialized) {
+        initialized = initialize_renderer(swap_chain, command_queue);
+        if (!initialized) return original_present(swap_chain, sync_interval, flags);
+    }
+
+    uint32_t frame_index = swap_chain->GetCurrentBackBufferIndex();
+    auto &frame = frames[frame_index];
+
+    if (frame.fence_value > 0) {
+        fence->SetEventOnCompletion(frame.fence_value, fence_event);
+        WaitForSingleObject(fence_event, INFINITE);
+    }
+
+    frame.command_allocator->Reset();
+    command_list->Reset(frame.command_allocator, nullptr);
+
+    auto barrier = D3D12_RESOURCE_BARRIER{
+        .Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION,
+        .Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE,
+        .Transition = {.pResource = frame.render_target,
+                       .Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES,
+                       .StateBefore = D3D12_RESOURCE_STATE_PRESENT,
+                       .StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET}};
+    command_list->ResourceBarrier(1, &barrier);
+    command_list->OMSetRenderTargets(1, &frame.render_target_descriptor, FALSE, nullptr);
+    command_list->SetDescriptorHeaps(1, &srv_heap);
+
+    ImGui_ImplDX12_NewFrame();
+    ImGui_ImplWin32_NewFrame();
+    ImGui::NewFrame();
+    g_render_callback();
+    ImGui::EndFrame();
+    ImGui::Render();
+    ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), command_list);
+
+    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+    command_list->ResourceBarrier(1, &barrier);
+    command_list->Close();
+
+    command_queue->ExecuteCommandLists(1, reinterpret_cast<ID3D12CommandList *const *>(&command_list));
+
+    fence_value++;
+    frame.fence_value = fence_value;
+    command_queue->Signal(fence, fence_value);
+
+    return original_present(swap_chain, sync_interval, flags);
+}
+
+static HRESULT resize_buffers_hook(IDXGISwapChain *swap_chain,
+                                   uint32_t buffer_count,
+                                   uint32_t width,
+                                   uint32_t height,
+                                   DXGI_FORMAT new_format,
+                                   uint32_t flags) {
+    if (initialized) {
+        auto gxglobals = er::GXBS::globals::instance();
+        if (gxglobals) {
+            auto cq = gxglobals->get_command_queue();
+            if (cq) wait_for_gpu(cq);
+        }
+        release_render_targets();
+    }
+
+    auto hr = original_resize_buffers(swap_chain, buffer_count, width, height, new_format, flags);
+
+    if (initialized) {
+        setup_render_targets((IDXGISwapChain3 *)swap_chain);
+    }
+
     return hr;
 }
 
 gg::renderer::impl::descriptor_pair gg::renderer::impl::alloc_descriptor() {
     auto index = free_indexes.back();
     free_indexes.pop_back();
-    return gg::renderer::impl::descriptor_pair{heap_start_cpu.ptr + (index * increment_size),
-                                               heap_start_gpu.ptr + (index * increment_size)};
+    return {D3D12_CPU_DESCRIPTOR_HANDLE{heap_start_cpu.ptr + (index * heap_increment_size)},
+            D3D12_GPU_DESCRIPTOR_HANDLE{heap_start_gpu.ptr + (index * heap_increment_size)}};
 }
 
 void gg::renderer::impl::free_descriptor(gg::renderer::impl::descriptor_pair pair) {
-    int32_t index = (int32_t)((pair.first.ptr - heap_start_cpu.ptr) / increment_size);
+    int32_t index = (int32_t)((pair.first.ptr - heap_start_cpu.ptr) / heap_increment_size);
     free_indexes.push_back(index);
 }
 
 void gg::renderer::initialize(function<void()> initialize_callback,
                               function<void()> render_callback) {
+    g_initialize_callback = initialize_callback;
+    g_render_callback = render_callback;
+
     er::GXBS::globals *gxglobals;
     while (!(gxglobals = er::GXBS::globals::instance())) {
         YieldProcessor();
@@ -303,23 +288,35 @@ void gg::renderer::initialize(function<void()> initialize_callback,
         YieldProcessor();
     }
 
-    auto hwnd = er::CS::CSWindow::instance()->hwnd;
-    wndproc = (WNDPROC)SetWindowLongPtrW(hwnd, GWLP_WNDPROC, (LONG_PTR)wndproc_hook);
-
-    task = render_task{initialize_callback, render_callback};
-    er::CS::CSTask::instance()->register_task(er::FD4::task_group::DrawBegin, task);
-
-    struct swap_chain_vftable_type {
-        void *unk[13];
-        decltype(swap_chain_resize_buffers) resize_buffers;
+    struct swap_chain_vtable {
+        void *QueryInterface;
+        void *AddRef;
+        void *Release;
+        void *SetPrivateData;
+        void *SetPrivateDataInterface;
+        void *GetPrivateData;
+        void *GetParent;
+        void *GetDevice;
+        void *Present;
+        void *GetBuffer;
+        void *SetFullscreenState;
+        void *GetFullscreenState;
+        void *GetDesc;
+        void *ResizeBuffers;
     };
 
-    auto &resize_buffers =
-        (*reinterpret_cast<swap_chain_vftable_type **>(swap_chain))->resize_buffers;
+    auto vtable = *reinterpret_cast<swap_chain_vtable **>(swap_chain);
 
-    unsigned long old_protect;
-    VirtualProtect(&resize_buffers, sizeof(resize_buffers), PAGE_EXECUTE_READWRITE, &old_protect);
-    swap_chain_resize_buffers = resize_buffers;
-    resize_buffers = &swap_chain_resize_buffers_hook;
-    VirtualProtect(&resize_buffers, sizeof(resize_buffers), old_protect, &old_protect);
+    DWORD old_protect;
+    VirtualProtect(&vtable->Present, sizeof(void *), PAGE_EXECUTE_READWRITE, &old_protect);
+    original_present = (decltype(original_present))vtable->Present;
+    vtable->Present = (void *)present_hook;
+    VirtualProtect(&vtable->Present, sizeof(void *), old_protect, &old_protect);
+
+    VirtualProtect(&vtable->ResizeBuffers, sizeof(void *), PAGE_EXECUTE_READWRITE, &old_protect);
+    original_resize_buffers = (decltype(original_resize_buffers))vtable->ResizeBuffers;
+    vtable->ResizeBuffers = (void *)resize_buffers_hook;
+    VirtualProtect(&vtable->ResizeBuffers, sizeof(void *), old_protect, &old_protect);
+
+    SPDLOG_INFO("renderer: hooks installed");
 }
