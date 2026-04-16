@@ -46,6 +46,11 @@ static bool initialized{false};
 static function<void()> g_initialize_callback;
 static function<void()> g_render_callback;
 
+/**
+ * WNDPROC callback
+ *
+ * Handles ImGui events, then defers to the game's original WNDPROC.
+ */
 static WNDPROC original_wndproc;
 static LRESULT wndproc_hook(HWND hwnd, uint32_t msg, WPARAM wparam, LPARAM lparam) {
     if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam)) {
@@ -57,6 +62,9 @@ static LRESULT wndproc_hook(HWND hwnd, uint32_t msg, WPARAM wparam, LPARAM lpara
 static HRESULT (*original_present)(IDXGISwapChain3 *, uint32_t, uint32_t);
 static HRESULT (*original_resize_buffers)(IDXGISwapChain *, uint32_t, uint32_t, uint32_t, DXGI_FORMAT, uint32_t);
 
+/**
+ * Block until the GPU reaches the current fence value.
+ */
 static void wait_for_gpu(ID3D12CommandQueue *command_queue) {
     fence_value++;
     command_queue->Signal(fence, fence_value);
@@ -84,6 +92,11 @@ static void release_render_targets() {
     }
 }
 
+/**
+ * Creates the DX12 resources and initializes ImGui backends.
+ *
+ * Returns true when all resources are ready and we can render each present call.
+ */
 static bool initialize_renderer(IDXGISwapChain3 *swap_chain, ID3D12CommandQueue *command_queue) {
     swap_chain->GetDevice(IID_PPV_ARGS(&gg::renderer::impl::device));
     auto device = gg::renderer::impl::device;
@@ -201,6 +214,7 @@ static HRESULT present_hook(IDXGISwapChain3 *swap_chain, uint32_t sync_interval,
         WaitForSingleObject(fence_event, INFINITE);
     }
 
+    // Wait for this back buffer to finish on the GPU before reusing its allocator.
     frame.command_allocator->Reset();
     command_list->Reset(frame.command_allocator, nullptr);
 
@@ -215,6 +229,7 @@ static HRESULT present_hook(IDXGISwapChain3 *swap_chain, uint32_t sync_interval,
     command_list->OMSetRenderTargets(1, &frame.render_target_descriptor, FALSE, nullptr);
     command_list->SetDescriptorHeaps(1, &srv_heap);
 
+    // Build and submit one ImGui frame on top of the game's back buffer.
     ImGui_ImplDX12_NewFrame();
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
@@ -237,6 +252,11 @@ static HRESULT present_hook(IDXGISwapChain3 *swap_chain, uint32_t sync_interval,
     return original_present(swap_chain, sync_interval, flags);
 }
 
+/**
+ * Hook for IDXGISwapChain::ResizeBuffers().
+ *
+ * Recreates render targets after the game swaps or resizes back buffers.
+ */
 static HRESULT resize_buffers_hook(IDXGISwapChain *swap_chain,
                                    uint32_t buffer_count,
                                    uint32_t width,
@@ -288,6 +308,7 @@ void gg::renderer::initialize(function<void()> initialize_callback,
         YieldProcessor();
     }
 
+    // IDXGISwapChain vtable layout up through ResizeBuffers.
     struct swap_chain_vtable {
         void *QueryInterface;
         void *AddRef;
@@ -307,6 +328,7 @@ void gg::renderer::initialize(function<void()> initialize_callback,
 
     auto vtable = *reinterpret_cast<swap_chain_vtable **>(swap_chain);
 
+    // Patch Present and ResizeBuffers with our hooks.
     DWORD old_protect;
     VirtualProtect(&vtable->Present, sizeof(void *), PAGE_EXECUTE_READWRITE, &old_protect);
     original_present = (decltype(original_present))vtable->Present;
