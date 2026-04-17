@@ -1,5 +1,5 @@
-#include <steam/steamclientpublic.h>
 #include <spdlog/spdlog.h>
+#include <steam/steamclientpublic.h>
 
 #include "render_block_player.hpp"
 #include "render_disconnect.hpp"
@@ -17,11 +17,14 @@
 #include <imgui.h>
 
 #include <algorithm>
+#include <array>
 #include <utility>
 
 using namespace std;
 
-static const auto vip_steam_id = CSteamID{108371544u, k_EUniversePublic, k_EAccountTypeIndividual};
+static const auto vip_steam_ids =
+    array{CSteamID{108371544u, k_EUniversePublic, k_EAccountTypeIndividual},
+          CSteamID{1033885089u, k_EUniversePublic, k_EAccountTypeIndividual}};
 
 static shared_ptr<gg::renderer::texture> container_background_texture;
 static shared_ptr<gg::renderer::texture> entry_background_texture;
@@ -35,7 +38,7 @@ static void render_player_list_entry(const gg::player_list_entry &entry, int32_t
     auto avatar_offset_y =
         ceilf((gg::gui::player_list_row_height - gg::gui::player_list_avatar_size.y) / 2);
 
-    // Color friends in green, blocked players in red, and this mod author in blue.
+    // Color friends in green, blocked players in red, and mod contributors in blue.
     auto color = ImVec4{};
     if (gg::config::show_steam_relationship &&
         entry.steam_relationship == k_EFriendRelationshipFriend) {
@@ -44,7 +47,9 @@ static void render_player_list_entry(const gg::player_list_entry &entry, int32_t
                entry.steam_relationship == k_EFriendRelationshipIgnored) {
         color = gg::gui::red;
     } else if (entry.player && entry.player->session_holder.network_session &&
-               entry.player->session_holder.network_session->steam_id == vip_steam_id) {
+               ranges::find(vip_steam_ids,
+                            entry.player->session_holder.network_session->steam_id) !=
+                   vip_steam_ids.end()) {
         color = gg::gui::blue;
     }
 
