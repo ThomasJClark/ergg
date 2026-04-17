@@ -17,8 +17,7 @@ FetchContent_Declare(mini
   CONFIGURE_COMMAND     ""
   BUILD_COMMAND         "")
 
-set(SPDLOG_DISABLE_DEFAULT_LOGGER ON)
-set(SPDLOG_USE_STD_FORMAT ON)
+add_compile_definitions(SPDLOG_USE_STD_FORMAT SPDLOG_DISABLE_DEFAULT_LOGGER)
 FetchContent_Declare(spdlog
   GIT_REPOSITORY        https://github.com/gabime/spdlog.git
   GIT_TAG               v1.13.0)
